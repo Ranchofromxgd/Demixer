@@ -9,16 +9,17 @@ class Config:
     epoches = 25
     use_gpu = True
     num_workers = 1
-    learning_rate = 0.003
-    step_size = 8000
+    learning_rate = 0.00008
+    step_size = 4000
     gamma = 0.85
     sample_rate = 44100
     batch_size = 4
     frame_length = 1.5
     empty_every_n = 50
+    project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
     # Dataset
     #musdb18hq
-    musdb_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test"
+    musdb_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/"
     musdb_train_vocal = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/musdb_train_vocal.txt"
     musdb_train_mixed = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/musdb_train_backtrack.txt"
     musdb_test_vocal = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/musdb_test_vocal.txt"
@@ -34,25 +35,29 @@ class Config:
     device = torch.device("cuda:1" if use_gpu else "cpu")
 
     # Reload pre-trained model
-    start_point = 0
+    start_point = 48000
     # model
     layer_numbers_unet = 5
     # Loss function
     '''
-    l1: frequency domain loss on mixed
-    l2: frequency domain loss on vocal
-    l3: frequency domain energy conservation loss
-    l4: time domain loss on mixed
-    l5: time domain loss on vocal
-    l6: time domain energy conservation loss
+    l1: frequency domain l1 loss on mixed
+    l2: frequency domain l1 loss on vocal
+    l3: frequency domain energy conservation l1 loss
+    l4: time domain sisdr loss on mixed
+    l5: time domain sisdr loss on vocal
+    l6: time domain energy conservation l1 loss
+    l4: time domain l1 loss on mixed
+    l5: time domain l1 loss on vocal
     '''
     loss_component = [
                         # 'l1',
                       # 'l2',
                       # 'l3',
-                      'l4',
-                      'l5',
+                      # 'l4',
+                      # 'l5',
                       # 'l6',
+                        'l7',
+                        'l8',
                       ]
     channels = 2
 

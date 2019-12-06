@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 import wave
 import numpy as np
 import scipy.signal as signal
@@ -52,18 +54,14 @@ class WaveHandler:
             frames = dsp.stft(frames.astype(np.float32),sample_rate = sample_rate)
         return frames
 
+    def get_channels_sampwidth_and_sample_rate(self,fname):
+        f = wave.open(fname)
+        params = f.getparams()
+        return (params[0],params[1],params[2]) == (2,2,44100),(params[0],params[1],params[2])
+
     def restore_wave(self,zxx):
         _,w = signal.istft(zxx)
         return w
-
-    # def specshow(self,inputs,fname = "temp.png"):
-    #     print("Drawing figure...")
-    #     plt.figure(figsize=(12, 8))
-    #     if(inputs.shape[0] > inputs.shape[1]):
-    #         display.specshow(librosa.amplitude_to_db(inputs.T))
-    #     else:
-    #         display.specshow(librosa.amplitude_to_db(inputs))
-    #     plt.savefig(fname)
 
 def save_pickle(obj,fname):
     print("Save pickle at "+fname)
@@ -77,6 +75,7 @@ def load_pickle(fname):
     return res
 
 def write_json(dict,fname):
+    print("Save json file at"+fname)
     json_str = json.dumps(dict)
     with open(fname, 'w') as json_file:
         json_file.write(json_str)
@@ -86,22 +85,11 @@ def load_json(fname):
         data = json.load(f)
         return data
 
-# class QueDict():
-#     def __init__(self,length):
-#         self.content = {}
-#         self.length = length
-#     def insert(self,key,value):
-#         if(len(self.content.keys()) >= self.length):
-#
-#         self.content[key] = value
 
 if __name__ == "__main__":
-    data = load_json("../evaluate/result.json")
-    sdr_vocal = [data[key]['sdr_vocal'] for key in data.keys()]
-    sdr_mixed = [data[key]['sdr_mixed'] for key in data.keys()]
-    print(sdr_vocal,sdr_mixed)
-    print(sum(sdr_mixed)/len(sdr_mixed))
-    print(sum(sdr_vocal)/len(sdr_vocal))
+    wh = WaveHandler()
+    res = wh.get_channels_sampwidth_and_sample_rate("/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/train/train_10/mixed.wav")
+    print(res)
     # wh = WaveHandler()
     # frames = wh.read_wave("/home/work_nfs3/yhfu/dataset/musdb18hq/train/train_0/mixed.wav")
     # frames2 = wh.read_wave("/home/work_nfs3/yhfu/dataset/musdb18hq/train/train_0/vocals.wav")

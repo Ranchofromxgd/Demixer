@@ -10,7 +10,8 @@ from __future__ import print_function
 import math
 import os
 import sys
-
+import sys
+sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 import torchaudio
 import torch
 import numpy as np
@@ -336,7 +337,10 @@ def torch_istft(stft_matrix,          # type: Tensor
     return y
 
 if __name__ == "__main__":
-    test1()
-    # h.specshow(f)
-    # data_t = overlap_and_add(f,data,Config.sample_rate)
-    # print((data_t-data)<0.01)
+    import numpy as np
+    import torch
+    a = np.random.randint(-30000,30000,size=(3000000,))
+    a = torch.Tensor(a)
+    spec = stft(a,sample_rate=44100)
+    b = istft(spec,sample_rate=44100)
+    print(b.size())

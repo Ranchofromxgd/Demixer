@@ -108,4 +108,86 @@ def varify_sisdr():
     # plot2wav(input,output)
     print(si_sdr(input,output))
 
-Song_data()
+def varify_garbage_sisdr():
+    wh = WaveHandler()
+    from evaluate.si_sdr_torch import si_sdr
+    import torch
+    base = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/garbage/"
+    data1 = base+"vocal_test_0.wav"
+    data2 = base+"vocals.wav"
+    output = wh.read_wave(data1, channel=1)
+    input = wh.read_wave(data2, channel=2)
+    length = min(output.shape[0], input.shape[0])
+    input, output = torch.Tensor(input[:length]), torch.Tensor(output[:length])
+    print(si_sdr(input, output))
+
+# To prove si_sdr_torch, si_sdr_numpy have the same result
+def varify_two_sisdr():
+    from evaluate import  si_sdr_numpy
+    import torch
+    wh = WaveHandler()
+    base = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/phase_spleeter_l7_l8_lr001_bs4_fl1.5_ss8000_85lnu5emptyEvery50model36000/"
+    data1 = base + "vocal_test_19.wav"
+    data2 = base + "origin_vocals_test_19.wav"
+    output = wh.read_wave(data1, channel=1)
+    input = wh.read_wave(data2, channel=1)
+    start = 1102500
+    length = 1000
+    plot2wav(output[start:start+length], input[start:start+length])
+
+def delete_unproper_training_data(path):
+    wh = WaveHandler()
+    son_path = os.listdir(path)
+    for each in son_path:
+        files = os.listdir(path+"/"+each)
+        for cnt,each in enumerate(files):
+            if(cnt % 20 == 0):
+                print("finished:",cnt)
+            file_pth = path+"/"+each+"/"+files
+            judge = wh.get_channels_sampwidth_and_sample_rate(file_pth)
+            if(not judge[0]):
+                print(judge[1],each,files)
+
+def random_sisdr():
+    from evaluate import  si_sdr_numpy
+    import numpy as np
+    a = np.random.randint(0,60000,size=(180000,))
+    b = np.random.randint(0,60000,size=(180000,))
+    print(si_sdr_numpy.si_sdr(a,b))
+
+def plot3wav(a,b,c):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(30,6))
+    plt.subplot(311)
+    plt.plot(a,linewidth = 1)
+    plt.subplot(312)
+    plt.plot(b,linewidth = 1)
+    plt.subplot(313)
+    plt.plot(c,linewidth = 1)
+    plt.savefig("com.png")
+
+def caculate():
+    from evaluate import si_sdr_numpy
+    from util.wave_util import load_pickle
+    vocal = load_pickle("vocal.pkl")
+    orig_vocal = load_pickle("ori_vocal.pkl")
+    start = 2000000
+    noise = vocal-orig_vocal
+    print(vocal.shape,orig_vocal.shape)
+
+def compare():
+    from evaluate import si_sdr_numpy
+    from util.wave_util import load_pickle
+    output = load_pickle("../output.pkl")
+    target = load_pickle("../target.pkl")
+    output,target = output[0].cpu().detach().numpy(),target[0].cpu().detach().numpy()
+    print(output, target)
+    output_len = 65824
+    target_len = 66150
+    gap = 326
+    start = 1000
+    plot2wav(output[-1000:],target[-1000:])
+    # noise = output-target
+
+
+varify_two_sisdr()
