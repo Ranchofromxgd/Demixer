@@ -32,7 +32,8 @@ class FixLengthDictionary:
 class WaveHandler:
     def __init__(self):
         self.wav_cache = FixLengthDictionary(maxlength=150)
-
+        self.read_times = 0
+        self.hit_times = 0
     def save_wave(self, frames, fname, bit_width=2, channels=1, sample_rate=44100):
         f = wave.open(fname, "wb")
         f.setnchannels(channels)
@@ -44,10 +45,13 @@ class WaveHandler:
     # Only get the first channel
     def read_wave(self, fname, channel=2,convert_to_f_domain = False,sample_rate = 44100,portion_start = 0,portion_end = 1):
         frames = self.wav_cache.get(fname)
+        self.read_times += 1
         if(frames.shape == ()):
             f = wave.open(fname)
             frames = np.fromstring(f.readframes(f.getparams()[3]), dtype=np.short)
             self.wav_cache.put(WavObj(fname,frames))
+        else:
+            self.hit_times  += 1
         frames.shape = -1, channel
         frames = frames[int(frames.shape[0]*portion_start):int(frames.shape[0]*portion_end), 0]
         if(convert_to_f_domain == True):

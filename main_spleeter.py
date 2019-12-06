@@ -66,9 +66,6 @@ def train( # Frequency domain
                 output_t_vocal = istft(output_vocal
                                        ,sample_rate=Config.sample_rate
                                        ,use_gpu=True)
-                save_pickle(output_t_mixed,"output.pkl")
-                save_pickle(target_t_mixed,"target.pkl")
-                exit(0)
                 min_length_mixed = min(output_t_mixed.size()[1], target_t_mixed.size()[1])
                 min_length_vocal = min(output_t_vocal.size()[1], target_t_vocal.size()[1])
                 min_length_vocal_mixed = min(min_length_mixed, min_length_vocal)
@@ -78,17 +75,12 @@ def train( # Frequency domain
             if('l3' in Config.loss_component):lossVal += loss(output_vocal,target_vocal)
             if('l4' in Config.loss_component):
                 val = -si_sdr(output_t_mixed.float()[:,:min_length_mixed],target_t_mixed.float()[:,:min_length_mixed])
-                # wh.save_wave(output_t_mixed.detach().cpu().numpy()[0].astype(np.int16), "garbage/output_t_mixed" + str(float(val)) +fname_music[0]+ ".wav")
-                # wh.save_wave(target_t_mixed.detach().cpu().numpy()[0], "garbage/target_t_mixed" + str(float(val)) +fname_music[0]+ ".wav")
                 lossVal = val
                 background_sisdr.append(float(val))
             if('l5' in Config.loss_component):
                 val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
-                # wh.save_wave(output_t_vocal.detach().cpu().numpy()[0].astype(np.int16), "garbage/output_t_vocal"+str(float(val))+fname_vocal[0]+".wav",channels=1)
-                # wh.save_wave(target_t_vocal.detach().cpu().numpy()[0], "garbage/target_t_vocal"+str(float(val))+fname_vocal[0]+".wav")
                 lossVal += val
                 vocal_sisdr.append(float(val))
-
             if('l6' in Config.loss_component):
                 lossVal += loss(output_t_mixed.float()[:,:min_length_vocal_mixed]+output_t_vocal.float()[:,:min_length_vocal_mixed],target_t_song.float()[:,:min_length_vocal_mixed])
             if('l7' in Config.loss_component):

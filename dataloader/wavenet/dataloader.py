@@ -10,7 +10,7 @@ from util.wave_util import save_pickle,load_pickle
 class WavenetDataloader(Dataset):
     def __init__(self,sample_length = Config.sample_rate*Config.frame_length,empty_every_n = 10000000):
         self.music_folders = self.readList(Config.musdb_train_mixed)
-        self.vocal_folders = self.readList(Config.musdb_train_vocal)*5+self.readList(Config.song_vocal_pth)
+        self.vocal_folders = self.readList(Config.musdb_train_vocal)#*5+self.readList(Config.song_vocal_pth)
         self.sample_length = int(sample_length)
         self.cnt = 0
         self.empty_every_n = empty_every_n

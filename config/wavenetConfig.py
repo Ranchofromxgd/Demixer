@@ -8,8 +8,8 @@ class Config:
     vocal_fname = "vocals.wav"
     epoches = 25
     use_gpu = True
-    num_workers = 1
-    learning_rate = 0.00008
+    num_workers = 16
+    learning_rate = 0.001
     step_size = 4000
     gamma = 0.85
     sample_rate = 44100
@@ -32,10 +32,10 @@ class Config:
     # visiable_device = os.environ["CUDA_VISIBLE_DEVICES"]
     # dev_num = os.environ["CUDA_VISIBLE_DEVICES"]
     # print("device",dev_num)
-    device = torch.device("cuda:1" if use_gpu else "cpu")
+    device = torch.device("cuda:0" if use_gpu else "cpu")
 
     # Reload pre-trained model
-    start_point = 48000
+    start_point = 0
     # model
     layer_numbers_unet = 5
     # Loss function
@@ -61,7 +61,7 @@ class Config:
                       ]
     channels = 2
 
-    trail_name = 'phase_spleeter_'
+    trail_name = 'phase_spleeter_only_musdb_'
     for each in loss_component:
         trail_name += each+"_"
     trail_name.strip("_")

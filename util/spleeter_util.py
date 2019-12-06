@@ -11,8 +11,8 @@ import numpy as np
 from evaluate.si_sdr_numpy import si_sdr,sdr
 import time
 import matplotlib.pyplot as plt
-name = "phase_spleeter_l7_l8_lr001_bs4_fl1.5_ss8000_85lnu5emptyEvery50"
-model_name = "model46000"
+name = "phase_spleeter_l7_l8_lr8e-05_bs4_fl1.5_ss4000_85lnu5emptyEvery50"
+model_name = "model78000"
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
@@ -50,7 +50,6 @@ class SpleeterUtil:
             sdr_mixed = sdr(mixed[:mixed_min_length],origin_mixed[:mixed_min_length])
             sdr_vocal = sdr(vocal[:vocal_min_length],origin_vocals[:vocal_min_length])
 
-
             if (save_wav == True):
                 if (not os.path.exists(Config.project_root + "outputs/" + name + model_name + "/")):
                     print("mkdir: " + Config.project_root + "outputs/" + name + model_name + "/")
@@ -70,6 +69,7 @@ class SpleeterUtil:
             performance[each]["sdr_mixed"] = sdr_mixed
             performance[each]["sdr_vocal"] = sdr_vocal
             print("mixed:",sdr_mixed,"vocal:",sdr_vocal)
+            # print("hit rate: ",self.wh.hit_times/self.wh.read_times)
         performance["ALL"] = {}
         performance["ALL"]["sdr_mixed"] = 0
         performance["ALL"]["sdr_vocal"] = 0
@@ -167,8 +167,8 @@ if __name__ == "__main__":
     # su.split("../xuemaojiao.wav",
     #         require_merge=False,
     #         use_gpu=True)
-    su.evaluate()
-    # su.split(mixed_fpath="../xuemaojiao.wav",save=True,require_merge=False,use_gpu=True)
+    # su.evaluate():q
+    su.split(mixed_fpath="../welcome_to_beijing.wav",save=True,require_merge=False,use_gpu=True)
 
 
 
