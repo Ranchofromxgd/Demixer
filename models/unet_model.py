@@ -14,6 +14,7 @@ class UNet(nn.Module):
     if(Config.layer_numbers_unet == 4):
         def __init__(self, n_channels, n_classes, bilinear=True):
             super(UNet, self).__init__()
+            self.cnt = 0
             self.n_channels = n_channels
             self.n_classes = n_classes
             self.bilinear = bilinear
@@ -44,6 +45,7 @@ class UNet(nn.Module):
     if (Config.layer_numbers_unet == 6):
         def __init__(self, n_channels, n_classes, bilinear=True):
             super(UNet, self).__init__()
+            self.cnt = 0
             self.n_channels = n_channels
             self.n_classes = n_classes
             self.bilinear = bilinear
@@ -85,6 +87,7 @@ class UNet(nn.Module):
         def __init__(self, n_channels, n_classes, bilinear=True):
             super(UNet, self).__init__()
             self.n_channels = n_channels
+            self.cnt = 0
             self.n_classes = n_classes
             self.bilinear = bilinear
 

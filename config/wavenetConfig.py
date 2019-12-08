@@ -10,10 +10,10 @@ class Config:
     use_gpu = True
     num_workers = 16
     learning_rate = 0.001
-    step_size = 4000
+    step_size = 8000
     gamma = 0.85
     sample_rate = 44100
-    batch_size = 4
+    batch_size = 6
     frame_length = 1.5
     empty_every_n = 50
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
@@ -37,7 +37,7 @@ class Config:
     # Reload pre-trained model
     start_point = 0
     # model
-    layer_numbers_unet = 5
+    layer_numbers_unet = 6
     # Loss function
     '''
     l1: frequency domain l1 loss on mixed
@@ -52,16 +52,16 @@ class Config:
     loss_component = [
                         # 'l1',
                       # 'l2',
-                      # 'l3',
+                      'l3',
                       # 'l4',
                       # 'l5',
                       # 'l6',
-                        'l7',
-                        'l8',
+                      #   'l7',
+                      #   'l8',
                       ]
     channels = 2
 
-    trail_name = 'phase_spleeter_only_musdb_'
+    trail_name = 'unet_phase_only_musdb_'
     for each in loss_component:
         trail_name += each+"_"
     trail_name.strip("_")

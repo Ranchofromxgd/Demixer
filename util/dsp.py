@@ -201,6 +201,7 @@ def istft(spectrum,
     # spectrum = np.transpose(spectrum)
     hop_length = int(sample_rate * frame_shift / 1000)
     win_length = int(sample_rate * frame_length / 1000)
+
     num_point = fft_point(win_length)
     if(use_gpu == True):
         window = get_window(num_point, window_type, square_root_window).cuda(Config.device)

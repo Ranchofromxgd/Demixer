@@ -11,8 +11,8 @@ import numpy as np
 from evaluate.si_sdr_numpy import si_sdr,sdr
 import time
 import matplotlib.pyplot as plt
-name = "phase_spleeter_l7_l8_lr8e-05_bs4_fl1.5_ss4000_85lnu5emptyEvery50"
-model_name = "model78000"
+name = "phase_spleeter_only_musdb_l7_l8_lr001_bs4_fl1.5_ss4000_85lnu5emptyEvery50"
+model_name = "model98000"
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
@@ -57,15 +57,15 @@ class SpleeterUtil:
                 self.wh.save_wave((mixed[:mixed_min_length]).astype(np.int16),
                                   Config.project_root + "outputs/" + name + model_name + "/mixed_" + each + ".wav",
                                   channels=1)
-                self.wh.save_wave((origin_mixed[:mixed_min_length]).astype(np.int16),
-                                  Config.project_root + "outputs/" + name + model_name + "/origin_mixed_" + each + ".wav",
-                                  channels=1)
+                # self.wh.save_wave((origin_mixed[:mixed_min_length]).astype(np.int16),
+                #                   Config.project_root + "outputs/" + name + model_name + "/origin_mixed_" + each + ".wav",
+                #                   channels=1)
                 self.wh.save_wave((vocal[:vocal_min_length]).astype(np.int16),
                                   Config.project_root + "outputs/" + name + model_name + "/vocal_" + each + ".wav",
                                   channels=1)
-                self.wh.save_wave((origin_vocals[:vocal_min_length]).astype(np.int16),
-                                  Config.project_root + "outputs/" + name + model_name + "/origin_vocals_" + each + ".wav",
-                                  channels=1)
+                # self.wh.save_wave((origin_vocals[:vocal_min_length]).astype(np.int16),
+                #                   Config.project_root + "outputs/" + name + model_name + "/origin_vocals_" + each + ".wav",
+                #                   channels=1)
             performance[each]["sdr_mixed"] = sdr_mixed
             performance[each]["sdr_vocal"] = sdr_vocal
             print("mixed:",sdr_mixed,"vocal:",sdr_vocal)
@@ -167,8 +167,8 @@ if __name__ == "__main__":
     # su.split("../xuemaojiao.wav",
     #         require_merge=False,
     #         use_gpu=True)
-    # su.evaluate():q
-    su.split(mixed_fpath="../welcome_to_beijing.wav",save=True,require_merge=False,use_gpu=True)
+    su.evaluate()
+    # su.split(mixed_fpath="../welcome_to_beijing.wav",save=True,require_merge=False,use_gpu=True)
 
 
 

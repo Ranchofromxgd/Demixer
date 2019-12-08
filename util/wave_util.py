@@ -31,7 +31,7 @@ class FixLengthDictionary:
 
 class WaveHandler:
     def __init__(self):
-        self.wav_cache = FixLengthDictionary(maxlength=150)
+        self.wav_cache = FixLengthDictionary(maxlength=20)
         self.read_times = 0
         self.hit_times = 0
     def save_wave(self, frames, fname, bit_width=2, channels=1, sample_rate=44100):
