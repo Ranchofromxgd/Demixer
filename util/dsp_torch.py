@@ -10,7 +10,6 @@ from __future__ import print_function
 import math
 import os
 import sys
-import sys
 sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 import torchaudio
 import torch
@@ -225,15 +224,15 @@ def spectrom2magnitude(spectrom,batchsize):
 def test1():
     import util.wave_util as wu
     from config.wavenetConfig import Config
-    from dataloader.wavenet import dataloader
+    from dataloader import dataloader
     h = wu.WaveHandler()
     dl = torch.utils.data.DataLoader(dataloader.WavenetDataloader(), batch_size=Config.batch_size, shuffle=False,
                                      num_workers=Config.num_workers)
     cnt = 0
-    for mixed, vocal, song in dl:
-        f_mixed = stft(mixed.float(), Config.sample_rate)
+    for background, vocal, song in dl:
+        f_background = stft(background.float(), Config.sample_rate)
         f_vocal = stft(vocal.float(), Config.sample_rate)
-        f_song = f_mixed+f_vocal
+        f_song = f_background+f_vocal
         phase = torchaudio.functional.angle(f_song)
         magnitude = spectrom2magnitude(f_song, Config.batch_size)
         rebuilt_f = seperate_magnitude(magnitude, phase)
@@ -338,10 +337,14 @@ def torch_istft(stft_matrix,          # type: Tensor
     return y
 
 if __name__ == "__main__":
-    import numpy as np
-    import torch
-    a = np.random.randint(-30000,30000,size=(3000000,))
-    a = torch.Tensor(a)
-    spec = stft(a,sample_rate=44100)
-    b = istft(spec,sample_rate=44100)
-    print(b.size())
+    fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/mixed.wav"
+    from util.wave_util import WaveHandler
+
+    wh = WaveHandler()
+    data = torch.Tensor(wh.read_wave(fname)).unsqueeze(0)
+    feat = stft(data,sample_rate=44100)
+    print(feat.size())
+    wave = istft(feat,sample_rate=44100)
+    print(wave.size())
+    # wh.save_wave(wave[0].numpy().astype(np.int16),"wave.wav")
+    # wh.save_wave(data[0].numpy().astype(np.int16),"data.wav")

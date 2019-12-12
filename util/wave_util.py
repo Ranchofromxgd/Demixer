@@ -3,7 +3,7 @@ sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/mus
 import wave
 import numpy as np
 import scipy.signal as signal
-import util.dsp as dsp
+import util.dsp_conv_torch as dsp
 import pickle
 from config.wavenetConfig import Config
 import json
@@ -62,6 +62,11 @@ class WaveHandler:
         f = wave.open(fname)
         params = f.getparams()
         return (params[0],params[1],params[2]) == (2,2,44100),(params[0],params[1],params[2])
+
+    def get_duration(self,fname):
+        f = wave.open(fname)
+        params = f.getparams()
+        return params[3]/params[2]
 
     def restore_wave(self,zxx):
         _,w = signal.istft(zxx)

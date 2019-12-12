@@ -4,35 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from util.wave_util import WaveHandler
-
-def intership_server():
-    test_path = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/"
-    train_path = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/train/"
-
-    test_files = os.listdir(test_path)
-    train_files = os.listdir(train_path)
-
-    fname1 = "musdb_test_mixed.txt"
-    fname2 = "musdb_test_vocal.txt"
-    fname3 = "musdb_train_mixed.txt"
-    fname4 = "musdb_train_vocal.txt"
-
-
-    with open(fname1,"w") as f:
-        for each in os.listdir(test_path):
-            f.write(test_path+each+"/mixed.wav\n")
-
-    with open(fname2,"w") as f:
-        for each in os.listdir(test_path):
-            f.write(test_path+each+"/vocals.wav\n")
-
-    with open(fname3,"w") as f:
-        for each in os.listdir(train_path):
-            f.write(train_path+each+"/mixed.wav\n")
-
-    with open(fname4,"w") as f:
-        for each in os.listdir(train_path):
-            f.write(train_path+each+"/vocals.wav\n")
+from pydub import AudioSegment
 
 def analysis_cache():
     fname = "/home/work_nfs/hhliu/workspace/github/wavenet-aslp/dataloader/wavenet/temp"
@@ -64,7 +36,6 @@ def Song_data():
         res.append(dir+fname)
     write_list(res,"/home/disk2/internship_anytime/liuhaohe/datasets/song_vocal_data_44_1.txt")
 
-
 def seg_data():
     wh = WaveHandler()
     dir = "/home/work_nfs/hhliu/datasets/song/441_song_data/"
@@ -78,7 +49,6 @@ def seg_data():
             seg_data = data[int(start*length):int((start+0.05)*length)]
             wh.save_wave(seg_data,seg_dir+fname.split('.')[-2]+"_"+str('%.2f' % start)+".wav",channels=2)
 
-
 def pure_music():
     path = "/home/work_nfs/hhliu/datasets/pure_music/"
     pth_name = [path+each for each in os.listdir(path)]
@@ -88,6 +58,15 @@ def pure_music():
         os.rename(each,path+"pure_music_"+str(cnt))
     write_list(log,path+"readme")
 
+def list_and_save_folder(path,save_path):
+    if(not path[-1] == '/'):
+        raise ValueError("Error: Path should end with / ")
+    files = os.listdir(path)
+    log = []
+    for cnt,each in enumerate(files):
+        log.append(path+each)
+    write_list(log,save_path)
+
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
     plt.subplot(211)
@@ -96,64 +75,19 @@ def plot2wav(a,b):
     plt.plot(b)
     plt.savefig("temp.png")
 
-def varify_sisdr():
-    from evaluate.si_sdr_torch import si_sdr
-    wh = WaveHandler()
-    voice_output_dir = "/home/work_nfs/hhliu/workspace/github/wavenet-aslp/util/outputs/vocal_test_0.wav"
-    voice_input_dir = "/home/work_nfs3/yhfu/dataset/musdb18hq/test/test_0/vocals.wav"
-    output = wh.read_wave(voice_output_dir,channel=1)
-    input = wh.read_wave(voice_input_dir)
-    length = min(output.shape[0],input.shape[0])
-    input,output = input[:length],output[:length]
-    # plot2wav(input,output)
-    print(si_sdr(input,output))
-
-def varify_garbage_sisdr():
-    wh = WaveHandler()
-    from evaluate.si_sdr_torch import si_sdr
-    import torch
-    base = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/garbage/"
-    data1 = base+"vocal_test_0.wav"
-    data2 = base+"vocals.wav"
-    output = wh.read_wave(data1, channel=1)
-    input = wh.read_wave(data2, channel=2)
-    length = min(output.shape[0], input.shape[0])
-    input, output = torch.Tensor(input[:length]), torch.Tensor(output[:length])
-    print(si_sdr(input, output))
-
-# To prove si_sdr_torch, si_sdr_numpy have the same result
-def varify_two_sisdr():
-    from evaluate import  si_sdr_numpy
-    import torch
-    wh = WaveHandler()
-    base = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/phase_spleeter_l7_l8_lr001_bs4_fl1.5_ss8000_85lnu5emptyEvery50model36000/"
-    data1 = base + "vocal_test_19.wav"
-    data2 = base + "origin_vocals_test_19.wav"
-    output = wh.read_wave(data1, channel=1)
-    input = wh.read_wave(data2, channel=1)
-    start = 1102500
-    length = 1000
-    plot2wav(output[start:start+length], input[start:start+length])
-
+# delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_music_wav/pure_music_7/")
 def delete_unproper_training_data(path):
+    if (not path[-1] == '/'):
+        raise ValueError("Error: path should end with /")
     wh = WaveHandler()
-    son_path = os.listdir(path)
-    for each in son_path:
-        files = os.listdir(path+"/"+each)
-        for cnt,each in enumerate(files):
-            if(cnt % 20 == 0):
-                print("finished:",cnt)
-            file_pth = path+"/"+each+"/"+files
-            judge = wh.get_channels_sampwidth_and_sample_rate(file_pth)
-            if(not judge[0]):
-                print(judge[1],each,files)
-
-def random_sisdr():
-    from evaluate import  si_sdr_numpy
-    import numpy as np
-    a = np.random.randint(0,60000,size=(180000,))
-    b = np.random.randint(0,60000,size=(180000,))
-    print(si_sdr_numpy.si_sdr(a,b))
+    files = os.listdir(path)
+    for cnt,each in enumerate(files):
+        if(cnt % 20 == 0):
+            print("finished:",cnt)
+        file_pth = path+each
+        judge = wh.get_channels_sampwidth_and_sample_rate(file_pth)
+        if(not judge[0]):
+            print(judge[1],each)
 
 def plot3wav(a,b,c):
     import matplotlib.pyplot as plt
@@ -166,28 +100,78 @@ def plot3wav(a,b,c):
     plt.plot(c,linewidth = 1)
     plt.savefig("com.png")
 
-def caculate():
-    from evaluate import si_sdr_numpy
-    from util.wave_util import load_pickle
-    vocal = load_pickle("vocal.pkl")
-    orig_vocal = load_pickle("ori_vocal.pkl")
-    start = 2000000
-    noise = vocal-orig_vocal
-    print(vocal.shape,orig_vocal.shape)
+def trans_mp3_folder_to_wav(root_path,save_folder):
+    if(not save_folder[-1] == '/' or not root_path[-1] == '/'):
+        raise ValueError("Error: path should end with /")
+    if(not os.path.exists(root_path)):
+        raise ValueError(root_path+" does not exist!")
+    if(not os.path.exists(save_folder)):
+        os.mkdir(save_folder)
+    for cnt,each in enumerate(os.listdir(root_path)):
+        if(each.split('.')[-1] == 'mp3'):
+            try:
+                trans_mp3_to_wav(root_path+each,save_folder)
+            except:
+                print("Failed to transfer: "+each)
+        if(cnt % 20 == 0):
+            print(cnt,"files finished")
 
-def compare():
-    from evaluate import si_sdr_numpy
-    from util.wave_util import load_pickle
-    output = load_pickle("../output.pkl")
-    target = load_pickle("../target.pkl")
-    output,target = output[0].cpu().detach().numpy(),target[0].cpu().detach().numpy()
-    print(output, target)
-    output_len = 65824
-    target_len = 66150
-    gap = 326
-    start = 1000
-    plot2wav(output[-1000:],target[-1000:])
-    # noise = output-target
+def trans_mp3_to_wav(filepath:str,savepath:str):
+    if(not savepath[-1] == '/'):
+        raise ValueError("Error: savepath should end with /")
+    name = filepath.split('.')[-2].split('/')[-1]
+    song = AudioSegment.from_mp3(filepath)
+    song.export(savepath+name+".wav", format="wav")
 
+def get_total_time_in_folder(path):
+    if(not path[-1] == '/'):
+        raise ValueError("Error: path should end with /")
+    wh = WaveHandler()
+    total_time = 0
+    for cnt,file in enumerate(os.listdir(path)):
+        if(cnt % 20 == 0):
+            print(cnt,"finished")
+        total_time += wh.get_duration(path+file)
+    print("total: ")
+    print(total_time,"s")
+    print(total_time/60,"min")
+    print(total_time/3600,"h")
 
-varify_two_sisdr()
+def readList(fname):
+    result = []
+    with open(fname,"r") as f:
+        for each in f.readlines():
+            each = each.strip('\n')
+            result.append(each)
+    return result
+
+def get_total_time_in_txt(txtpath):
+    wh = WaveHandler()
+    cnt = 0
+    files = readList(txtpath)
+    total_time = 0
+    for cnt,file in enumerate(files):
+        if(cnt % 100 == 0):
+            print(cnt,"finished")
+        try:
+            total_time += wh.get_duration(file)
+            cnt += 1
+        except:
+            print("error:",file)
+    print("total: ")
+    print(total_time,"s")
+    print(total_time/60,"min")
+    print(total_time/3600,"h")
+    return total_time/3600,cnt
+
+# delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal/k_pop/")
+# list_and_save_folder("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal/k_pop/",fname="k_pop.txt")
+# from config.wavenetConfig import Config
+totalsongs =0
+totalduration = 0
+from config.wavenetConfig import Config
+for each in Config.netease_background_pth:
+    duration,num = get_total_time_in_txt(each)
+    totalsongs+=num
+    totalduration += duration
+print(totalsongs,totalduration)

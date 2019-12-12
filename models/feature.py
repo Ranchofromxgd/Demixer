@@ -172,6 +172,7 @@ if __name__ == "__main__":
     data = th.Tensor(wh.read_wave(fname)).unsqueeze(0)
     print(data.size())
     m,p = stft.forward(data)
+    print(m.size(),p.size())
     wave = istft.forward(m,p)
     diff = th.sum(th.abs(wave-data))/th.sum(data)
     print(diff)

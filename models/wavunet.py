@@ -162,17 +162,3 @@ class TasNet(nn.Module):
 
 if __name__ == "__main__":
     model = torch.load("/home/work_nfs/hhliu/workspace/github/wavenet-aslp/saved_models/model34000.pkl",map_location='cpu')
-    test_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/test/test_0/"
-    from util.wave import WaveHandler
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    wav = WaveHandler()
-    vocals = wav.read_wave(test_path+"vocals.wav")
-    mixed = wav.read_wave(test_path+"mixed.wav")
-    maxVal = max(np.max(np.abs(vocals)), np.max(np.abs(mixed)))
-    vocals,mixed = vocals/maxVal,mixed/maxVal
-    song = torch.Tensor((vocals+mixed)).unsqueeze(0)
-    song = song.unsqueeze(1)
-    output = (30000*model.forward(song[:,:,:])).detach().numpy().astype(np.int16)
-    wav.save_wave(output,"out.wav",channels=1)
