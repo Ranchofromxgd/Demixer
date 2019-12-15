@@ -95,16 +95,4 @@ def plot2wav(a,b):
     plt.savefig("temp.png")
 
 if __name__ == "__main__":
-    fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/mixed.wav"
-    from util.wave_util import WaveHandler
-    import matplotlib.pyplot as plt
-
-    wh = WaveHandler()
-    data = torch.Tensor(wh.read_wave(fname)).unsqueeze(0)
-    feat = stft(data)
-    print(feat.size())
-    wave = istft(feat)
-    print(wave.size())
-    # wh.save_wave(wave[0].numpy().astype(np.int16),"wave.wav")
-    # wh.save_wave(data[0].numpy().astype(np.int16),"data.wav")
-
+    pass

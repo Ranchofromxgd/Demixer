@@ -1,62 +1,70 @@
 import torch
 import os
 
+def write_list(l,fname):
+    with open(fname,'w') as f:
+        for each in l:
+            f.write(each+"\n")
+import datetime
+
+
 class Config:
     test_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/test/"
     train_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/train/"
-    mix_fname = "mixed.wav"
+    background_fname = "background.wav"
     vocal_fname = "vocals.wav"
     epoches = 25
     use_gpu = True
     num_workers = 16
-    learning_rate = 0.001
-    step_size = 8000
-    gamma = 0.85
+    learning_rate = 0.0003
+    step_size = 4000
+    gamma = 0.8
     sample_rate = 44100
     batch_size = 4
     frame_length = 1.5
     empty_every_n = 50
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
-    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/datahub/"
+    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
 
-    trail_name = 'phase_spleeter_musdb'
-    netease_included = [7]
+    # trail_name = 'phase_spleeter_musdb'
+    cur = datetime.datetime.now()
+    trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+'phase_spleeter_'
     # Dataset
     #musdb18hq
-    musdb_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/"
-    # musdb: 100
-    musdb_train_vocal =  datahub_root + "musdb_train_vocal.txt"
-    musdb_train_background = datahub_root + "musdb_train_backtrack.txt"
-    musdb_test_vocal = datahub_root +"musdb_test_vocal.txt"
-    musdb_test_background = datahub_root +"musdb_test_backtrack.txt"
-    # song_vocal: 1440
-    song_vocal_pth = datahub_root + "song_vocal_data_44_1.txt"
-    # kpop: 44
-    kpop_vocal_pth = datahub_root + "k_pop.txt"
-    # Netease music
-    netease_background_pth = []
-    for i in netease_included:
-        netease_background_pth.append(datahub_root+"pure_music_"+str(i)+".txt")
-    if(not len(netease_included) == 0):
-        trail_name+="_netease"
-        for each in netease_included:
-           trail_name+= str(each)
-        trail_name += "_"
+    musdb_test_pth = datahub_root+"musdb18hq/test/"
 
-    # # mir1k
-    # mir1k_music = "/home/work_nfs3/yhfu/workspace/multichannel_separation/speech_noise_rir_list/mir1k_music.txt"
-    # mir1k_vocal = "/home/work_nfs3/yhfu/workspace/multichannel_separation/speech_noise_rir_list/mir1k_vocal.txt"
-    # visiable_device = os.environ["CUDA_VISIBLE_DEVICES"]
-    # dev_num = os.environ["CUDA_VISIBLE_DEVICES"]
-    # print("device",dev_num)
-    device = torch.device("cuda:1" if use_gpu else "cpu")
+    musdb_train_vocal =  datahub_root + "datahub/musdb_train_vocal.txt"
+    musdb_train_background = datahub_root + "datahub/musdb_train_backtrack.txt"
+    musdb_test_vocal = datahub_root +"datahub/musdb_test_vocal.txt"
+    musdb_test_background = datahub_root +"datahub/musdb_test_backtrack.txt"
+
+    # musdb: 100
+    vocal_data = [
+        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
+        datahub_root + "datahub/k_pop.txt", # 44
+    ]
+    background_data = [
+        datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
+        datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
+        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
+        datahub_root + "datahub/pure_music_7.txt",
+        datahub_root + "datahub/pure_music_9.txt",
+        datahub_root + "datahub/纯伴奏byLHH.txt",
+        datahub_root + "datahub/纯伴奏byLHH.txt",
+    ]
+    background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*4
+    background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]*3
+    background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]*3
+    background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
+
+    device = torch.device("cuda:0" if use_gpu else "cpu")
 
     # config for stft and istft
     stft_frame_shift = 8
     stft_frame_length = 32
 
     # Reload pre-trained model
-    start_point = 0
+    start_point =9000
     # model
     layer_numbers_unet = 5
     # Loss function
@@ -77,8 +85,8 @@ class Config:
                       # 'l4',
                       #  'l5',
                       # 'l6',
-                        'l7',
-                         'l8',
+                       'l7',
+                       'l8',
                       ]
     channels = 2
 
@@ -93,6 +101,13 @@ class Config:
                 +"emptyEvery"+str(empty_every_n)
 
     temp = []
+
+    if (not os.path.exists(project_root+"saved_models/" + trail_name)):
+        os.mkdir(project_root+"saved_models/" + trail_name + "/")
+        print("MakeDir: " + project_root+"saved_models/" + trail_name)
+
+    write_list(background_data,project_root+"saved_models/" + trail_name+"/"+"data_background.txt")
+    write_list(vocal_data,project_root+"saved_models/" + trail_name+"/"+"data_vocal.txt")
 
 if __name__ == "__main__":
     print(Config.trail_name)

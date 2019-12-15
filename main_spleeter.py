@@ -7,11 +7,8 @@ from util.wave_util import WaveHandler
 from evaluate.si_sdr_torch import si_sdr
 import torch
 import os
+import time
 from util.spleeter_util import SpleeterUtil
-
-if(not os.path.exists("./saved_models/"+Config.trail_name)):
-    os.mkdir("./saved_models/"+Config.trail_name+"/")
-    print("MakeDir: "+"./saved_models/"+Config.trail_name)
 
 loss = torch.nn.L1Loss()
 
@@ -106,6 +103,7 @@ def train( # Frequency domain
                 val = loss(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
                 lossVal += val
             # Backward
+            # print(float(lossVal))
             loss_cache.append(float(lossVal))
             optimizer.zero_grad()
             lossVal.backward()
@@ -116,10 +114,18 @@ if(not Config.start_point == 0):
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
+every_n = 100
+
 for epoch in range(Config.epoches):
-    print("EPOCH: ",epoch)
+    print("EPOCH: ", epoch)
+    start = time.time()
     for background,vocal,song in dl:
-        # [4, 1025, 188, 2]
+
+        if (model.cnt % every_n == 0 and model.cnt != Config.start_point):
+            print("Loss", (sum(loss_cache[-every_n:]) / every_n))
+            if (model.cnt % 3000 == 0):
+                save_and_evaluation()
+
         f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
         train(target_background=f_background,
               target_vocal=f_vocal, 
@@ -128,11 +134,7 @@ for epoch in range(Config.epoches):
               target_t_vocal=vocal,
               target_t_song=song)
         scheduler.step()
-        every_n = 10
-        if(model.cnt % every_n == 0):
-            print("Loss",(sum(loss_cache[-every_n:])/every_n))
-            if (model.cnt % 3000 == 0 and not model.cnt == 0):
-                save_and_evaluation()
         model.cnt += 1
-
+    end = time.time()
+    print("Epoch "+str(epoch)+" finish, total time: "+str(end-start))
 

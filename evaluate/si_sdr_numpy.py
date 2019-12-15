@@ -19,10 +19,6 @@ def remove_dc(signal):
     return signal
 
 
-def pow_np_norm(signal):
-    """Compute 2 Norm"""
-    return np.square(np.linalg.norm(signal, ord=2))
-
 # def sdr(estimated,original):
 #     noise = estimated - original
 #     return 10 * np.log10(pow_np_norm(original) / pow_np_norm(noise))
@@ -33,11 +29,11 @@ def pow_norm(s1, s2):
 def plot3wav(a,b,c):
     import matplotlib.pyplot as plt
     plt.figure(figsize=(30,6))
-    plt.subplot(311)
+    plt.subplot(211)
     plt.plot(a,linewidth = 1)
-    plt.subplot(312)
+    plt.subplot(212)
     plt.plot(b,linewidth = 1)
-    plt.subplot(313)
+    # plt.subplot(313)
     plt.plot(c,linewidth = 1)
     plt.savefig("com.png")
 
@@ -49,6 +45,10 @@ def plot2wav(a,b):
     plt.subplot(212)
     plt.plot(b)
     plt.savefig("temp.png")
+
+def pow_np_norm(signal):
+    """Compute 2 Norm"""
+    return np.square(np.linalg.norm(signal, ord=2))
 
 def si_sdr(estimated, original):
     estimated = remove_dc(estimated.astype(np.float64))

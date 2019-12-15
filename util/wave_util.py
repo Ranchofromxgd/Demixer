@@ -53,7 +53,8 @@ class WaveHandler:
         else:
             self.hit_times  += 1
         frames.shape = -1, channel
-        frames = frames[int(frames.shape[0]*portion_start):int(frames.shape[0]*portion_end), 0]
+        start,end = int(frames.shape[0]*portion_start),int(frames.shape[0]*portion_end)
+        frames = frames[start:end, 0]
         if(convert_to_f_domain == True):
             frames = dsp.stft(frames.astype(np.float32),sample_rate = sample_rate)
         return frames
@@ -97,12 +98,6 @@ def load_json(fname):
 
 if __name__ == "__main__":
     wh = WaveHandler()
-    res = wh.get_channels_sampwidth_and_sample_rate("/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/train/train_10/mixed.wav")
-    print(res)
-    # wh = WaveHandler()
-    # frames = wh.read_wave("/home/work_nfs3/yhfu/dataset/musdb18hq/train/train_0/mixed.wav")
-    # frames2 = wh.read_wave("/home/work_nfs3/yhfu/dataset/musdb18hq/train/train_0/vocals.wav")
-    # print(np.max(np.abs(frames)))
-    # print(np.max(np.abs(frames2)))
+
 
 

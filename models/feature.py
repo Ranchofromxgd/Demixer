@@ -159,7 +159,7 @@ class iSTFT(STFTBase):
         return s
 
 if __name__ == "__main__":
-    fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/mixed.wav"
+    fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/background.wav"
     from util.wave_util import WaveHandler
     import matplotlib.pyplot as plt
 

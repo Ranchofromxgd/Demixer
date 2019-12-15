@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from util.wave_util import WaveHandler
 from pydub import AudioSegment
+from config.wavenetConfig import Config
 
 def analysis_cache():
     fname = "/home/work_nfs/hhliu/workspace/github/wavenet-aslp/dataloader/wavenet/temp"
@@ -69,10 +70,8 @@ def list_and_save_folder(path,save_path):
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
-    plt.subplot(211)
-    plt.plot(a)
-    plt.subplot(212)
-    plt.plot(b)
+    plt.plot(a,linewidth = 0.5)
+    plt.plot(b,linewidth = 0.5)
     plt.savefig("temp.png")
 
 # delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_music_wav/pure_music_7/")
@@ -82,12 +81,13 @@ def delete_unproper_training_data(path):
     wh = WaveHandler()
     files = os.listdir(path)
     for cnt,each in enumerate(files):
-        if(cnt % 20 == 0):
-            print("finished:",cnt)
         file_pth = path+each
-        judge = wh.get_channels_sampwidth_and_sample_rate(file_pth)
-        if(not judge[0]):
-            print(judge[1],each)
+        if(file_pth.split('.')[-1] == 'wav'):
+            judge = wh.get_channels_sampwidth_and_sample_rate(file_pth)
+            if(not judge[0]):
+                print(each,"Unproper! params:",judge[1])
+                os.remove(file_pth)
+
 
 def plot3wav(a,b,c):
     import matplotlib.pyplot as plt
@@ -129,8 +129,6 @@ def get_total_time_in_folder(path):
     wh = WaveHandler()
     total_time = 0
     for cnt,file in enumerate(os.listdir(path)):
-        if(cnt % 20 == 0):
-            print(cnt,"finished")
         total_time += wh.get_duration(path+file)
     print("total: ")
     print(total_time,"s")
@@ -151,27 +149,85 @@ def get_total_time_in_txt(txtpath):
     files = readList(txtpath)
     total_time = 0
     for cnt,file in enumerate(files):
-        if(cnt % 100 == 0):
-            print(cnt,"finished")
         try:
             total_time += wh.get_duration(file)
             cnt += 1
         except:
             print("error:",file)
-    print("total: ")
-    print(total_time,"s")
-    print(total_time/60,"min")
-    print(total_time/3600,"h")
+
+    # print(total_time,"s")
+    # print(total_time/60,"min")
+    print(txtpath.split('/')[-1].split('.')[-2],",",total_time/3600,"h")
     return total_time/3600,cnt
 
-# delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal/k_pop/")
-# list_and_save_folder("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal/k_pop/",fname="k_pop.txt")
-# from config.wavenetConfig import Config
-totalsongs =0
-totalduration = 0
-from config.wavenetConfig import Config
-for each in Config.netease_background_pth:
-    duration,num = get_total_time_in_txt(each)
-    totalsongs+=num
-    totalduration += duration
-print(totalsongs,totalduration)
+
+def netease_filter(root_path:str,save_path:str):
+    if(root_path[-1]!='/'):
+        raise ValueError("Error: Path should end with /")
+    list_names = os.listdir(root_path)
+    for each in list_names:
+        list_path = root_path+each+"/"
+        save_list_path = save_path+each+"/"
+        txt_path = Config.datahub_root+"datahub/" + each + ".txt"
+        if (not os.path.exists(list_path)):
+            continue
+        if (not os.path.exists(save_list_path)):
+            trans_mp3_folder_to_wav(list_path,save_list_path)
+        delete_unproper_training_data(save_list_path)
+        list_and_save_folder(save_list_path,txt_path)
+        print(each,"Time statistic")
+        get_total_time_in_txt(txt_path)
+        # print("Done!")
+        print("")
+
+def rename_musdb():
+    musdb_test = Config.datahub_root+"musdb18hq/test/"
+    musdb_train = Config.datahub_root+"musdb18hq/train/"
+
+    for each in os.listdir(musdb_test):
+        os.rename(musdb_test+each+"/mixed.wav",musdb_test+each+"/background.wav")
+    for each in os.listdir(musdb_train):
+        os.rename(musdb_train+each+"/mixed.wav",musdb_train+each+"/background.wav")
+
+def construct_musdb():
+    musdb_test = Config.datahub_root+"musdb18hq/test/"
+    musdb_train = Config.datahub_root+"musdb18hq/train/"
+    test_vocal = []
+    train_vocal = []
+    train_background = []
+    test_background = []
+    for each in os.listdir(musdb_test):
+        test_vocal.append(musdb_test+each+"/vocals.wav")
+        test_background.append(musdb_test+each+"/background.wav")
+    for each in os.listdir(musdb_train):
+        train_vocal.append(musdb_train+each+"/vocals.wav")
+        train_background.append(musdb_train+each+"/background.wav")
+    write_list(test_vocal,Config.musdb_test_vocal)
+    write_list(train_vocal,Config.musdb_train_vocal)
+    write_list(train_background,Config.musdb_train_background)
+    write_list(test_background,Config.musdb_test_background)
+
+def construct_song():
+    song = Config.datahub_root+"song_data/"
+    song_dir = []
+    for each in os.listdir(song):
+        delete_unproper_training_data(song+"/")
+        song_dir.append(song+"/"+each)
+    write_list(song_dir,Config.datahub_root+"datahub/song_vocal_data_44_1.txt")
+
+def construct_kpop():
+    song = Config.datahub_root+"pure_vocal/k_pop"
+    song_dir = []
+    for each in os.listdir(song):
+        delete_unproper_training_data(song+"/")
+        song_dir.append(song+"/"+each)
+    write_list(song_dir,Config.datahub_root+"datahub/k_pop.txt")
+
+def report_data():
+    root = Config.datahub_root+"datahub/"
+    for each in os.listdir(root):
+        get_total_time_in_txt(root+each)
+
+# netease_filter(Config.datahub_root+"pure_music_mp3/"
+#                ,Config.datahub_root+"pure_music_wav/")
+report_data()

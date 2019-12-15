@@ -337,14 +337,4 @@ def torch_istft(stft_matrix,          # type: Tensor
     return y
 
 if __name__ == "__main__":
-    fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/mixed.wav"
-    from util.wave_util import WaveHandler
-
-    wh = WaveHandler()
-    data = torch.Tensor(wh.read_wave(fname)).unsqueeze(0)
-    feat = stft(data,sample_rate=44100)
-    print(feat.size())
-    wave = istft(feat,sample_rate=44100)
-    print(wave.size())
-    # wh.save_wave(wave[0].numpy().astype(np.int16),"wave.wav")
-    # wh.save_wave(data[0].numpy().astype(np.int16),"data.wav")
+    pass
