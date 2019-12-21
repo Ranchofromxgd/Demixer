@@ -12,8 +12,8 @@ from evaluate.si_sdr_numpy import si_sdr,sdr
 import time
 import decimal
 import matplotlib.pyplot as plt
-name = "2019_12_14_phase_spleeter_l2_l3_lr001_bs4_fl1.5_ss8000_85lnu5emptyEvery50"
-model_name = "model42000"
+name ="2019_12_20_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss120000_5lnu5emptyEvery50"
+model_name = "model99000"
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
@@ -37,13 +37,16 @@ class SpleeterUtil:
         self.wh = wave_util.WaveHandler()
         self.start = []
         self.end = []
-        for each in np.linspace(0,95,20):
+        # for each in np.linspace(0,95,20):
+        #     self.start.append(each/100)
+        #     self.end.append((each+5)/100)
+        for each in np.linspace(0,98,50):
             self.start.append(each/100)
-            self.end.append((each+5)/100)
+            self.end.append((each+2)/100)
 
     def evaluate(self,save_wav = True,save_json = True):
         performance = {}
-        pth = os.listdir(self.test_pth)
+        pth = os.listdir(self.test_pth)#+os.listdir(Config.musdb_train_pth)
         pth.sort()
         for each in pth:
             print("evaluating: ",each,end="  ")
@@ -54,8 +57,8 @@ class SpleeterUtil:
             background_min_length = min(background.shape[0],origin_background.shape[0])
             vocal_min_length = min(vocal.shape[0],origin_vocals.shape[0])
 
-            sdr_background = sdr(background[:background_min_length],origin_background[:background_min_length])
-            sdr_vocal = sdr(vocal[:vocal_min_length],origin_vocals[:vocal_min_length])
+            sdr_background = si_sdr(background[:background_min_length],origin_background[:background_min_length])
+            sdr_vocal = si_sdr(vocal[:vocal_min_length],origin_vocals[:vocal_min_length])
 
             if (save_wav == True):
                 if (not os.path.exists(Config.project_root + "outputs/" + name + model_name + "/")):
@@ -135,8 +138,8 @@ class SpleeterUtil:
                     # To avoid taking one sample point into calculation twice
                     if(i != 0):
                         input_background,input_vocals = input_background[1:],input_vocals[1:]
-                    input_f_background = stft(torch.Tensor(input_background).float(),Config.sample_rate).unsqueeze(0)
-                    input_f_vocals = stft(torch.Tensor(input_vocals).float(),Config.sample_rate).unsqueeze(0)
+                    input_f_background = stft(torch.Tensor(input_background).float().cuda(Config.device),Config.sample_rate).unsqueeze(0)
+                    input_f_vocals = stft(torch.Tensor(input_vocals).float().cuda(Config.device),Config.sample_rate).unsqueeze(0)
                     input_f = (input_f_vocals+input_f_background)
                 else:
                     origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
@@ -145,10 +148,10 @@ class SpleeterUtil:
                                                portion_end=portion_end,portion_start=portion_start)
                     if (i != 0):
                         input_background = input_background[1:]
-                    input_f = stft(torch.Tensor(input_background).float(), Config.sample_rate).unsqueeze(0)
+                    input_f = stft(torch.Tensor(input_background).float().cuda(Config.device), Config.sample_rate).unsqueeze(0)
                 out = []
                 for i in range(self.model.channels):
-                    input_f = input_f.cuda(Config.device)
+                    # input_f = input_f.cuda(Config.device)
                     data = self.model.forward(i, input_f)*input_f
                     out.append(data.squeeze(0))
                 for count, each in enumerate(out):
@@ -183,7 +186,7 @@ if __name__ == "__main__":
     #         use_gpu=True)
     path = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/saved_models/"+name+"/"+model_name+".pkl"
     su = SpleeterUtil(model_pth = path)
-    # su.evaluate()
+    su.evaluate()
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])
     # vocal_min_length = min(vocal.shape[0], origin_vocal.shape[0])
@@ -192,7 +195,7 @@ if __name__ == "__main__":
     # sdr_vocal = sdr(vocal[:vocal_min_length], origin_vocal[:vocal_min_length])
     # print(sdr_background,sdr_vocal)
 
-    su.split(background_fpath="../xuemaojiao.wav",save=True,require_merge=False,use_gpu=True)
+    # su.split(background_fpath="../xuemaojiao.wav",save=True,require_merge=False,use_gpu=True)
 
 
 

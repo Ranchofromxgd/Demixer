@@ -7,6 +7,40 @@ import os
 import time
 import numpy as np
 from util.wave_util import save_pickle,load_pickle
+import torch
+
+class data_prefetcher():
+    def __init__(self, loader):
+        self.loader = iter(loader)
+        self.stream = torch.cuda.Stream(Config.device)
+        self.preload()
+
+    def preload(self):
+        try:
+            self.next_background, self.next_vocal,self.next_song = next(self.loader)
+        except StopIteration:
+            self.next_background = None
+            self.next_vocal = None
+            self.next_song= None
+            return
+        with torch.cuda.stream(self.stream):
+            self.next_background = self.next_background.cuda(Config.device,non_blocking=True)
+            self.next_vocal = self.next_vocal.cuda(Config.device,non_blocking=True)
+            self.next_song = self.next_song.cuda(Config.device,non_blocking=True)
+
+    def next(self):
+        torch.cuda.current_stream(Config.device).wait_stream(self.stream)
+        background = self.next_background
+        vocal = self.next_vocal
+        song = self.next_song
+        if background is not None:
+            background.record_stream(torch.cuda.current_stream(Config.device))
+        if vocal is not None:
+            vocal.record_stream(torch.cuda.current_stream(Config.device))
+        if song is not None:
+            song.record_stream(torch.cuda.current_stream(Config.device))
+        self.preload()
+        return background, vocal,song
 
 class WavenetDataloader(Dataset):
     def __init__(self,sample_length = Config.sample_rate*Config.frame_length,num_worker = Config.num_workers,empty_every_n = 10000000):
@@ -56,7 +90,7 @@ class WavenetDataloader(Dataset):
             background_crop, vocal_crop = background_crop/2, vocal_crop/2
 
         background_crop, vocal_crop = background_crop.astype(np.int16), vocal_crop.astype(np.int16)
-        return background_crop, vocal_crop,background_crop+vocal_crop#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
+        return torch.Tensor(background_crop), torch.Tensor(vocal_crop),torch.Tensor(background_crop+vocal_crop)#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
 
     def __len__(self):
         # Actually infinit due to the random dynamic sampling
@@ -76,10 +110,14 @@ def zero():
 if __name__ == "__main__":
     import torch
     from util.wave_util import WaveHandler
+
     wh = WaveHandler()
     s = WavenetDataloader()
     dl = torch.utils.data.DataLoader(s, batch_size=Config.batch_size, shuffle=False, num_workers=1)
-    cnt = 0
-    for each in dl:
-        print(each[-1])
-        cnt += 1
+    pref = data_prefetcher(dl)
+    b,v,s = pref.next()
+    iteration = 0
+    while s is not None:
+        print("here")
+        iteration += 1
+        b,v,s = pref.next()

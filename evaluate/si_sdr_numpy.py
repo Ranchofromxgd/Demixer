@@ -58,11 +58,18 @@ def si_sdr(estimated, original):
     noise = estimated - target
     return 10 * np.log10(pow_np_norm(target) / pow_np_norm(noise))
 
+def unify(source,target):
+    source_max = np.max(np.abs(source))
+    target_max = np.max(np.abs(target))
+    source = source.astype(np.float32)/source_max
+    return (source*target_max).astype(np.int16),target
+
 def sdr(estimated, original):
+    estimated, original = unify(estimated, original)
     # target = pow_norm(estimated, original) * original / pow_np_norm(original)
     estimated, original = estimated.astype(np.float64), original.astype(np.float64)
-    original = remove_dc(original)
-    estimated = remove_dc(estimated)
+    # original = remove_dc(original)
+    # estimated = remove_dc(estimated)
     noise = estimated - original
     return 10 * np.log10(pow_np_norm(original) / pow_np_norm(noise))
 

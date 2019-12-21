@@ -70,7 +70,9 @@ def list_and_save_folder(path,save_path):
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
+    plt.subplot(211)
     plt.plot(a,linewidth = 0.5)
+    plt.subplot(212)
     plt.plot(b,linewidth = 0.5)
     plt.savefig("temp.png")
 
@@ -157,7 +159,7 @@ def get_total_time_in_txt(txtpath):
 
     # print(total_time,"s")
     # print(total_time/60,"min")
-    print(txtpath.split('/')[-1].split('.')[-2],",",total_time/3600,"h")
+    print(txtpath.split('/')[-1].split('.')[-2],",",total_time/3600)
     return total_time/3600,cnt
 
 
@@ -228,6 +230,102 @@ def report_data():
     for each in os.listdir(root):
         get_total_time_in_txt(root+each)
 
+def merge_musdb():
+    for each in os.listdir(Config.musdb_test_pth):
+        test_dir = Config.musdb_test_pth+each+"/"
+        os.system("sox -m "+test_dir+"vocals.wav "+test_dir+"background.wav "+test_dir+"combined.wav")
+        print("ok1")
+    for each in os.listdir(Config.musdb_train_pth):
+        train_dir = Config.musdb_train_pth + each + "/"
+        os.system("sox -m "+train_dir+"vocals.wav "+train_dir+"background.wav "+train_dir+"combined.wav")
+        print("ok2")
+
+datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
+
+musdb_test_pth = datahub_root+"musdb18hq/test/"
+musdb_train_pth = datahub_root+"musdb18hq/train/"
+# spleeter separate -i combined.wav -p spleeter:2stems -o output
+def spleet_musdb():
+    output_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/test/"
+    output_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/train/"
+
+    for each in os.listdir(musdb_test_pth):
+        print(each)
+        if (os.path.exists(output_test_pth + each + "/" + "output/combined/vocals.wav")
+                and os.path.exists(output_test_pth + each + "/" + "output/combined/accompaniment.wav")):
+            continue
+        test_dir = musdb_test_pth+each+"/"
+        os.system("spleeter separate -i " + test_dir + "combined.wav" + " -p spleeter:2stems -o "
+                  + output_test_pth + each + "/" + "output")
+    for each in os.listdir(musdb_train_pth):
+        print(each)
+        if(os.path.exists(output_train_pth+each+"/"+"output/combined/vocals.wav")
+                and os.path.exists(output_train_pth+each+"/"+"output/combined/accompaniment.wav")):
+            continue
+        train_dir = musdb_train_pth + each + "/"
+        os.system("spleeter separate -i "+train_dir+"combined.wav"+" -p spleeter:2stems -o "
+                  +output_train_pth+each+"/"+"output")
+
+def unify(source,target):
+    source_max = np.max(np.abs(source))
+    target_max = np.max(np.abs(target))
+    source = source.astype(np.float32)/source_max
+    return (source*target_max).astype(np.int16),target
+
+def eval_spleeter():
+    wh = WaveHandler()
+    from evaluate.si_sdr_numpy import sdr,si_sdr
+    output_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/test/"
+    output_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/train/"
+    mus_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/train/"
+    mus_test_pth= "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/"
+
+    vocal = []
+    background = []
+
+    for each in os.listdir(mus_train_pth):
+        mus_dir = mus_train_pth + each + "/"
+        out_dir = output_train_pth + each + "/output/combined/"
+        # try:
+        mus_vocal = wh.read_wave(mus_dir + "vocals.wav")
+        mus_background = wh.read_wave(mus_dir + "background.wav")
+        output_vocal = wh.read_wave(out_dir + "vocals.wav")
+        output_background = wh.read_wave(out_dir + "accompaniment.wav")
+
+        output_vocal, mus_vocal = unify(output_vocal, mus_vocal)
+        output_background, mus_background = unify(output_background, mus_background)
+
+        v = sdr(output_vocal, mus_vocal)
+        b = sdr(output_background, mus_background)
+        vocal.append(v)
+        background.append(b)
+        print(each, v, b)
+
+    for each in os.listdir(musdb_test_pth):
+        mus_dir = mus_test_pth+each+"/"
+        out_dir = output_test_pth+each+"/output/combined/"
+        # try:
+        mus_vocal = wh.read_wave(mus_dir+"vocals.wav")
+        mus_background = wh.read_wave(mus_dir+"background.wav")
+        output_vocal = wh.read_wave(out_dir+"vocals.wav")
+        output_background = wh.read_wave(out_dir+"accompaniment.wav")
+
+        output_vocal, mus_vocal = unify(output_vocal,mus_vocal)
+        output_background,mus_background = unify(output_background,mus_background)
+
+        v = sdr(output_vocal,mus_vocal)
+        b = sdr(output_background,mus_background)
+        vocal.append(v)
+        background.append(b)
+        print(each,v,b)
+
+        # except:
+        #     print("Error",each)
+    print(sum(vocal)/len(vocal))
+    print(sum(background)/len(background))
+
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
-report_data()
+# netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
+# report_data()
+eval_spleeter()

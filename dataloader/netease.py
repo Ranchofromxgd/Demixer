@@ -9,17 +9,18 @@ from bs4 import BeautifulSoup
 save_root = "/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/"
 pure_vocal_to_do = [
     # 2019-12-13
-    "https://music.163.com/#/playlist?id=2313554742",
-    "https://music.163.com/#/playlist?id=2021261354",
-    "https://music.163.com/#/playlist?id=140935570",
-    "https://music.163.com/#/playlist?id=2286848",
-    "https://music.163.com/#/playlist?id=530191151",
-    "https://music.163.com/#/playlist?id=158725481",
-    "https://music.163.com/#/playlist?id=33275157",
-    "https://music.163.com/#/playlist?id=2521740264",
-    "https://music.163.com/#/playlist?id=2181589504",
-    "https://music.163.com/#/playlist?id=98038128",
-    "https://music.163.com/#/playlist?id=608623860",
+    # "https://music.163.com/#/playlist?id=2313554742",
+    # "https://music.163.com/#/playlist?id=2021261354",
+    # "https://music.163.com/#/playlist?id=140935570",
+    # "https://music.163.com/#/playlist?id=2286848",
+    # "https://music.163.com/#/playlist?id=530191151",
+    # "https://music.163.com/#/playlist?id=158725481",
+    # "https://music.163.com/#/playlist?id=33275157",
+    # "https://music.163.com/#/playlist?id=2521740264",
+    # "https://music.163.com/#/playlist?id=2181589504",
+    # "https://music.163.com/#/playlist?id=98038128",
+    # "https://music.163.com/#/playlist?id=608623860",
+    "https://music.163.com/#/playlist?id=85487211"
 ]
 
 background_to_do = [
