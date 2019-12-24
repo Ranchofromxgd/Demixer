@@ -162,17 +162,17 @@ if __name__ == "__main__":
     fname = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/background.wav"
     from util.wave_util import WaveHandler
     import matplotlib.pyplot as plt
-
-    wh = WaveHandler()
-    hop_length = int(44100 * 8 / 1000)
-    win_length = int(44100 * 32 / 1000)
-    print(hop_length,win_length)
-    stft = STFT(frame_len=win_length,frame_hop=hop_length)
-    istft = iSTFT(frame_len=win_length,frame_hop=hop_length)
-    data = th.Tensor(wh.read_wave(fname)).unsqueeze(0)
-    print(data.size())
-    m,p = stft.forward(data)
-    print(m.size(),p.size())
-    wave = istft.forward(m,p)
-    diff = th.sum(th.abs(wave-data))/th.sum(data)
-    print(diff)
+    #
+    # wh = WaveHandler()
+    # hop_length = int(44100 * 8 / 1000)
+    # win_length = int(44100 * 32 / 1000)
+    # print(hop_length,win_length)
+    # stft = STFT(frame_len=win_length,frame_hop=hop_length)
+    # istft = iSTFT(frame_len=win_length,frame_hop=hop_length)
+    # data = th.Tensor(wh.read_wave(fname)).unsqueeze(0)
+    # print(data.size())
+    # m,p = stft.forward(data)
+    # print(m.size(),p.size())
+    # wave = istft.forward(m,p)
+    # diff = th.sum(th.abs(wave-data))/th.sum(data)
+    # print(diff)

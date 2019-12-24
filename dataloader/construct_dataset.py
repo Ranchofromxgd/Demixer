@@ -266,6 +266,17 @@ def spleet_musdb():
         os.system("spleeter separate -i "+train_dir+"combined.wav"+" -p spleeter:2stems -o "
                   +output_train_pth+each+"/"+"output")
 
+
+def spleet_pth(input_pth):
+    output_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/netease/"
+    for each in os.listdir(input_pth):
+        print(each)
+        # if (os.path.exists(output_pth + each + "/" + "output/combined/vocals.wav")
+        #         and os.path.exists(output_pth + each + "/" + "output/combined/accompaniment.wav")):
+        #     continue
+        os.system("spleeter separate -i " + input_pth + each + " -p spleeter:2stems -o "
+                  + output_pth + each)
+
 def unify(source,target):
     source_max = np.max(np.abs(source))
     target_max = np.max(np.abs(target))
@@ -282,26 +293,26 @@ def eval_spleeter():
 
     vocal = []
     background = []
+    #
+    # for each in os.listdir(mus_train_pth):
+    #     mus_dir = mus_train_pth + each + "/"
+    #     out_dir = output_train_pth + each + "/output/combined/"
+    #     # try:
+    #     mus_vocal = wh.read_wave(mus_dir + "vocals.wav")
+    #     mus_background = wh.read_wave(mus_dir + "background.wav")
+    #     output_vocal = wh.read_wave(out_dir + "vocals.wav")
+    #     output_background = wh.read_wave(out_dir + "accompaniment.wav")
+    #
+    #     output_vocal, mus_vocal = unify(output_vocal, mus_vocal)
+    #     output_background, mus_background = unify(output_background, mus_background)
+    #
+    #     v = sdr(output_vocal, mus_vocal)
+    #     b = sdr(output_background, mus_background)
+    #     vocal.append(v)
+    #     background.append(b)
+    #     print("FileName: ",each, "\tSDR-VOCAL: ",v,"SDR-BACKGROUND: " ,b)
 
-    for each in os.listdir(mus_train_pth):
-        mus_dir = mus_train_pth + each + "/"
-        out_dir = output_train_pth + each + "/output/combined/"
-        # try:
-        mus_vocal = wh.read_wave(mus_dir + "vocals.wav")
-        mus_background = wh.read_wave(mus_dir + "background.wav")
-        output_vocal = wh.read_wave(out_dir + "vocals.wav")
-        output_background = wh.read_wave(out_dir + "accompaniment.wav")
-
-        output_vocal, mus_vocal = unify(output_vocal, mus_vocal)
-        output_background, mus_background = unify(output_background, mus_background)
-
-        v = sdr(output_vocal, mus_vocal)
-        b = sdr(output_background, mus_background)
-        vocal.append(v)
-        background.append(b)
-        print(each, v, b)
-
-    for each in os.listdir(musdb_test_pth):
+    for each in sorted(os.listdir(musdb_test_pth)):
         mus_dir = mus_test_pth+each+"/"
         out_dir = output_test_pth+each+"/output/combined/"
         # try:
@@ -317,15 +328,21 @@ def eval_spleeter():
         b = sdr(output_background,mus_background)
         vocal.append(v)
         background.append(b)
-        print(each,v,b)
+        print("FileName: ",each, "\tSDR-BACKGROUND: " ,b,"\tSDR-VOCAL: ",v)
 
         # except:
         #     print("Error",each)
-    print(sum(vocal)/len(vocal))
-    print(sum(background)/len(background))
+    print("AVG-SDR-VOCAL",sum(vocal)/len(vocal))
+    print("AVG-SDR-BACKGROUND",sum(background)/len(background))
 
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
 # netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
 # report_data()
+
+def posterior_handling(output_raw):
+    pass
+
+
+# spleet_pth("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
 eval_spleeter()

@@ -15,6 +15,11 @@ def write_list(l,fname):
         for each in l:
             f.write(each+"\n")
 
+def L1loss(estimate,target):
+    if(estimate.size()!=target.size()):
+        raise ValueError("Error: estimate and the target tensor shape should be asame")
+    return torch.sum(torch.abs(target-estimate))/estimate.nelement()
+
 if (not os.path.exists(Config.project_root + "saved_models/" + Config.trail_name)):
     os.mkdir(Config.project_root + "saved_models/" + Config.trail_name + "/")
     print("MakeDir: " + Config.project_root + "saved_models/" + Config.trail_name)
@@ -35,11 +40,12 @@ sdr_background_cache, sdr_vocal_cache = [],[]
 wh = WaveHandler()
 model = Spleeter(channels=2,unet_inchannels=2,unet_outchannels=2).cuda(Config.device)
 dl = torch.utils.data.DataLoader(
-    dataloader.WavenetDataloader(empty_every_n=Config.empty_every_n),
+    dataloader.WavenetDataloader(),
     batch_size=Config.batch_size,
     shuffle=False,
     num_workers=Config.num_workers)
 optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
+optimizer.zero_grad()
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=Config.step_size, gamma=Config.gamma)
 
 def save_and_evaluation():
@@ -66,13 +72,6 @@ def train( # Frequency domain
             target_t_song
             ):
     # Put data on GPU
-    # if (not Config.device == 'cpu'):
-    #     target_song = target_song.cuda(Config.device)
-    #     if('l2' in Config.loss_component):target_background = target_background.cuda(Config.device)
-    #     if('l3' in Config.loss_component):target_vocal = target_vocal.cuda(Config.device)
-    #     if('l4' in Config.loss_component or 'l7' in Config.loss_component):target_t_background = target_t_background.cuda(Config.device)
-    #     if('l5' in Config.loss_component or 'l8' in Config.loss_component):target_t_vocal = target_t_vocal.cuda(Config.device)
-    #     if('l6' in Config.loss_component):target_t_song = target_t_song.cuda(Config.device)
     output_track = []
     # For each channels
     for track_i in range(Config.channels):
@@ -104,14 +103,14 @@ def train( # Frequency domain
                 min_length_vocal_background = min(min_length_background, min_length_vocal)
             # Loss function: Energy conservation & mixed spectrom & vocal spectrom & background wave & vocal wave
             if('l1' in Config.loss_component):
-                lossVal = loss(output_track_sum, target_song)
+                lossVal = loss(output_track_sum, target_song)/Config.accumulation_step
                 freq_cons_loss_cache.append(float(lossVal))
             if('l2' in Config.loss_component):
-                temp2 = loss(output_background,target_background)
+                temp2 = loss(output_background,target_background)/Config.accumulation_step
                 lossVal += temp2
                 freq_loss += float(temp2)
             if('l3' in Config.loss_component):
-                temp3 = loss(output_vocal,target_vocal)
+                temp3 = loss(output_vocal,target_vocal)/Config.accumulation_step
                 lossVal += temp3
                 freq_loss_cache.append(freq_loss+float(temp3))
             # if('l4' in Config.loss_component):
@@ -121,21 +120,25 @@ def train( # Frequency domain
             #     val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
             #     lossVal += val
             if('l6' in Config.loss_component):
-                temp6 = loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
+                temp6 = L1loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
                 lossVal += temp6
                 wav_cons_loss_cache.append(float(temp6))
             if('l7' in Config.loss_component):
-                val7 = loss(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
+                val7 = L1loss(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
                 lossVal += val7
                 wav_loss += float(val7)
             if('l8' in Config.loss_component):
-                val8 = loss(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
+                val8 = L1loss(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
                 lossVal += val8
                 wav_loss_cache.append(wav_loss+float(val8))
             # Backward
-            optimizer.zero_grad()
             lossVal.backward()
-            optimizer.step()
+            if(model.cnt%Config.accumulation_step == 0 and model.cnt != 0):
+                # Optimize
+                optimizer.step()
+                optimizer.zero_grad()
+
+
 
 if(not Config.start_point == 0):
     model = torch.load("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/saved_models/"+Config.trail_name+"/model"+str(Config.start_point)+".pkl",
@@ -156,10 +159,14 @@ for epoch in range(Config.epoches):
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
                   "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
                   "\tlr:",optimizer.param_groups[0]['lr'])
+            wav_loss_cache = []
+            freq_loss_cache = []
+            wav_cons_loss_cache = []
+            freq_cons_loss_cache = []
             if (model.cnt % 9000 == 0):
                 save_and_evaluation()
-
-        f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
+        # f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
+        f_background, f_vocal, f_song = background, vocal, song
         train(target_background=f_background,
               target_vocal=f_vocal, 
               target_song=f_song,

@@ -10,7 +10,7 @@ from __future__ import print_function
 import math
 import os
 import sys
-sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
+sys.path.append("..")
 import torchaudio
 import torch
 import numpy as np
@@ -145,7 +145,7 @@ def stft(signal,
     hop_length = int(sample_rate * frame_shift / 1000) # The greater sample_rate, the greater hop_length
     win_length = int(sample_rate * frame_length / 1000)
     num_point = fft_point(win_length)
-    window = get_window(num_point, window_type, square_root_window).cuda(Config.device)
+    window = get_window(num_point, window_type, square_root_window)
     # print(num_point,hop_length,win_length,window)#  2048 352 1411 [0.         0.00153473 0.00306946 ... 0.00306946 0.00153473 0.        ]
     # print(window.shape) # (20048,)
     # feat = librosa.stft(signal, n_fft=num_point, hop_length=hop_length,

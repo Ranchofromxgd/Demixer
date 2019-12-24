@@ -1,12 +1,12 @@
-import sys
-sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
+
 import wave
 import numpy as np
 import scipy.signal as signal
 import util.dsp_conv_torch as dsp
 import pickle
-from config.wavenetConfig import Config
 import json
+import time
+
 class WavObj:
     def __init__(self,fname,content):
         self.fname =fname
@@ -44,17 +44,19 @@ class WaveHandler:
 
     # Only get the first channel
     def read_wave(self, fname, channel=2,convert_to_f_domain = False,sample_rate = 44100,portion_start = 0,portion_end = 1):
-        frames = self.wav_cache.get(fname)
-        self.read_times += 1
-        if(frames.shape == ()):
-            f = wave.open(fname)
+        f = wave.open(fname)
+        if(portion_end <= 1):
             frames = np.fromstring(f.readframes(f.getparams()[3]), dtype=np.short)
-            self.wav_cache.put(WavObj(fname,frames))
+            frames.shape = -1, channel
+            start, end = int(frames.shape[0] * portion_start), int(frames.shape[0] * portion_end)
+            frames = frames[start:end, 0]
         else:
-            self.hit_times  += 1
-        frames.shape = -1, channel
-        start,end = int(frames.shape[0]*portion_start),int(frames.shape[0]*portion_end)
-        frames = frames[start:end, 0]
+            f.setpos(portion_start)
+            temp = f.readframes(portion_end-portion_start)
+            frames = np.fromstring(temp, dtype=np.short) #This one is too slow!!!
+            frames.shape = -1, channel
+            frames = frames[:,0]
+
         if(convert_to_f_domain == True):
             frames = dsp.stft(frames.astype(np.float32),sample_rate = sample_rate)
         return frames
@@ -68,6 +70,11 @@ class WaveHandler:
         f = wave.open(fname)
         params = f.getparams()
         return params[3]/params[2]
+
+    def get_framesLength(self,fname):
+        f = wave.open(fname)
+        params = f.getparams()
+        return params[3]
 
     def restore_wave(self,zxx):
         _,w = signal.istft(zxx)
@@ -98,6 +105,12 @@ def load_json(fname):
 
 if __name__ == "__main__":
     wh = WaveHandler()
+    frames = wh.read_wave("/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_22/combined.wav",
+                          portion_start=44100*40,
+                          portion_end = 44100*41)
+    print(frames.shape)
+    wh.save_wave(frames.astype(np.int16),"temp.wav")
+
 
 
 

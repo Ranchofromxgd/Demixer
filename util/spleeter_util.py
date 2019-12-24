@@ -1,19 +1,22 @@
-import sys
-sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
+import time
+import decimal
+import matplotlib.pyplot as plt
 import os
 import json
+import torch
+import numpy as np
+import sys
+sys.path.append("..")
+
 from config.wavenetConfig import Config
 from util import wave_util
 from util.dsp_torch import stft,istft,spectrom2magnitude,seperate_magnitude
 from util.wave_util import save_pickle,load_pickle,write_json
-import torch
-import numpy as np
 from evaluate.si_sdr_numpy import si_sdr,sdr
-import time
-import decimal
-import matplotlib.pyplot as plt
-name ="2019_12_20_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss120000_5lnu5emptyEvery50"
-model_name = "model99000"
+
+
+name ="2019_12_22_phase_spleeter_l1_l2_l3_lr0001_bs4_fl1.5_ss60000_5lnu5emptyEvery50"
+model_name = "model162000"
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
@@ -196,6 +199,7 @@ if __name__ == "__main__":
     # print(sdr_background,sdr_vocal)
 
     # su.split(background_fpath="../xuemaojiao.wav",save=True,require_merge=False,use_gpu=True)
+    # su.split(background_fpath="../welcome_to_beijing.wav",save=True,require_merge=False,use_gpu=True)
 
 
 

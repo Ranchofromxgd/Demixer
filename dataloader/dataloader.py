@@ -1,13 +1,15 @@
 import sys
-sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
-from torch.utils.data import Dataset
+sys.path.append("..")
+from util.wave_util import WaveHandler
 from config.wavenetConfig import Config
-import util.wave_util as wave_util
+from torch.utils.data import Dataset
+# These part should below 'import util'
 import os
 import time
-import numpy as np
-from util.wave_util import save_pickle,load_pickle
 import torch
+import numpy as np
+from util.dsp_torch import stft
+
 
 class data_prefetcher():
     def __init__(self, loader):
@@ -43,7 +45,14 @@ class data_prefetcher():
         return background, vocal,song
 
 class WavenetDataloader(Dataset):
-    def __init__(self,sample_length = Config.sample_rate*Config.frame_length,num_worker = Config.num_workers,empty_every_n = 10000000):
+    def __init__(self,sample_length = Config.sample_rate*Config.frame_length,
+                 num_worker = Config.num_workers,
+                 sampleNo=20000,
+                 mu = 0.5,
+                 sigma = 0.15,
+                 alpha_low = 0.2,
+                 alpha_high = 0.5 # If alpha_high get a value greater than 0.5, it would have probability to overflow
+    ):
         # self.music_folders = self.readList(Config.musdb_train_background)
         self.music_folders = []
         for each in Config.background_data:
@@ -53,12 +62,19 @@ class WavenetDataloader(Dataset):
             self.vocal_folders += self.readList(each)
         self.sample_length = int(sample_length)
         self.cnt = 0
+        self.data_counter = 0
+        self.sampleNo = sampleNo
         self.num_worker = num_worker
-        self.empty_every_n = empty_every_n
-        self.wh = wave_util.WaveHandler()
-
-
+        self.wh = WaveHandler()
+        # This alpha is to balance the energy between vocal and background
+        # Also, this alpha is used to simulate different energy leval between vocal and background
+        np.random.seed(0)
+        self.normal_distribution = np.random.normal(mu, sigma, sampleNo)
+        self.normal_distribution = self.normal_distribution[self.normal_distribution > alpha_low]
+        self.normal_distribution = self.normal_distribution[self.normal_distribution < alpha_high]
+        self.sampleNo = self.normal_distribution.shape[0]
     def __getitem__(self, item):
+        self.data_counter += 1
         np.random.seed(os.getpid()+self.cnt)
         # Select background(background only) and vocal file randomly
         self.cnt += self.num_worker
@@ -66,31 +82,38 @@ class WavenetDataloader(Dataset):
         random_vocal = np.random.randint(0,len(self.vocal_folders))
         music_fname = self.music_folders[random_music]
         vocal_fname = self.vocal_folders[random_vocal]
-        background_frames = self.wh.read_wave(music_fname)
-        # if (self.cnt % self.empty_every_n == 0):
-        #     background_start = np.random.randint(0, background_frames.shape[0] - self.sample_length)
-        #     background_crop = background_frames[background_start: background_start + self.sample_length]
-        #     return background_crop,np.zeros(background_crop.shape).astype(np.int16),background_crop
-        vocal_frames = self.wh.read_wave(vocal_fname)
+        music_length = self.wh.get_framesLength(music_fname)
+        vocal_length = self.wh.get_framesLength(vocal_fname)
+
+        background_start = np.random.randint(0, music_length - self.sample_length)
+        vocal_start = np.random.randint(0, vocal_length - self.sample_length)
+
+        background_crop = self.wh.read_wave(music_fname,
+                                            portion_start=background_start,
+                                            portion_end=background_start+self.sample_length)
+
+        vocal_crop = self.wh.read_wave(vocal_fname,
+                                       portion_start=vocal_start,
+                                       portion_end=vocal_start+self.sample_length)
 
         # Randomly crop
-        background_start = np.random.randint(0,background_frames.shape[0]-self.sample_length)
-        vocal_start = np.random.randint(0,vocal_frames.shape[0]-self.sample_length)
-        background_crop = background_frames[background_start: background_start+self.sample_length]
-        vocal_crop = vocal_frames[vocal_start: vocal_start+self.sample_length]
-
         vocal_crop = vocal_crop.astype(np.float32)
         max_background = np.max(np.abs(background_crop))
         max_vocal = np.max(np.abs(vocal_crop))
 
         # To avoid magnify the blank vocal
+
         if(not max_vocal == 0 and (max_background/max_vocal)<50):
             vocal_crop /= max_vocal
             background_crop, vocal_crop = background_crop, (vocal_crop * max_background).astype(np.int16)
-            background_crop, vocal_crop = background_crop/2, vocal_crop/2
+            alpha_vocal = self.normal_distribution[self.data_counter % self.sampleNo]
+            alpha_background = self.normal_distribution[-(self.data_counter % self.sampleNo)]
+            background_crop, vocal_crop = background_crop*alpha_background, vocal_crop*alpha_vocal
 
         background_crop, vocal_crop = background_crop.astype(np.int16), vocal_crop.astype(np.int16)
-        return torch.Tensor(background_crop), torch.Tensor(vocal_crop),torch.Tensor(background_crop+vocal_crop)#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
+        b,v,s = torch.Tensor(background_crop), torch.Tensor(vocal_crop), torch.Tensor(background_crop + vocal_crop)
+        b,v,s = stft(b.float(),Config.sample_rate),stft(v.float(),Config.sample_rate),stft(s.float(),Config.sample_rate)
+        return b,v,s#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
 
     def __len__(self):
         # Actually infinit due to the random dynamic sampling
@@ -109,15 +132,24 @@ def zero():
 
 if __name__ == "__main__":
     import torch
-    from util.wave_util import WaveHandler
 
     wh = WaveHandler()
     s = WavenetDataloader()
     dl = torch.utils.data.DataLoader(s, batch_size=Config.batch_size, shuffle=False, num_workers=1)
+    # start = 0
+    # for each in dl:
+    #     end = time.time()
+    #     print(start - end)
+    #     start = time.time()
+
     pref = data_prefetcher(dl)
     b,v,s = pref.next()
     iteration = 0
+
     while s is not None:
-        print("here")
+        start = time.time()
         iteration += 1
         b,v,s = pref.next()
+        # wh.save_wave(s.cpu().numpy().astype(np.int16),"tempOutput/"+str(iteration)+".wav")
+        end = time.time()
+        print(start-end,iteration)

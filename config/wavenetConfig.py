@@ -13,13 +13,14 @@ class Config:
     epoches = 25
     use_gpu = True
     learning_rate = 0.0003
-    step_size = 120000
-    gamma = 0.5
+    accumulation_step = 50
+    step_size = 6000
+    gamma = 0.8
     sample_rate = 44100
-    batch_size = 2
+    batch_size = 4
     num_workers = batch_size
     frame_length = 1.5
-    empty_every_n = 50
+
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
     datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
 
@@ -38,10 +39,12 @@ class Config:
 
     # musdb: 100
     vocal_data = [
+        musdb_train_vocal,
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/k_pop.txt", # 44
     ]
     background_data = [
+        musdb_train_background,
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
         # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
@@ -49,22 +52,23 @@ class Config:
         # datahub_root + "datahub/pure_music_9.txt",
         # datahub_root + "datahub/纯伴奏byLHH.txt",
         datahub_root + "datahub/纯伴奏byLHH.txt",
+        datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
     ]
-    background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
-    background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]
-    background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
+    # background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
+    # background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]
+    # background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
     # background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
 
-    device = torch.device("cuda:0" if use_gpu else "cpu")
+    device = torch.device("cuda:1" if use_gpu else "cpu")
 
     # config for stft and istft
     stft_frame_shift = 8
     stft_frame_length = 32
 
     # Reload pre-trained model
-    start_point = 0 
+    start_point = 0
     # model
-    layer_numbers_unet = 6
+    layer_numbers_unet = 5
     # Loss function
     '''
     l1: Frequency domain energy conservation l1 loss
@@ -95,8 +99,7 @@ class Config:
                 +"bs"+str(batch_size)+"_"\
                 +"fl"+str(frame_length)+"_"\
                 +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
-                +"lnu"+str(layer_numbers_unet)\
-                +"emptyEvery"+str(empty_every_n)
+                +"lnu"+str(layer_numbers_unet)
 
     temp = []
 
