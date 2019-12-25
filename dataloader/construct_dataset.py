@@ -6,7 +6,7 @@ import numpy as np
 from util.wave_util import WaveHandler
 from pydub import AudioSegment
 from config.wavenetConfig import Config
-
+from util.wave_util import save_pickle,load_pickle
 def analysis_cache():
     fname = "/home/work_nfs/hhliu/workspace/github/wavenet-aslp/dataloader/wavenet/temp"
     with open(fname,'r') as f:
@@ -324,17 +324,38 @@ def eval_spleeter():
         output_vocal, mus_vocal = unify(output_vocal,mus_vocal)
         output_background,mus_background = unify(output_background,mus_background)
 
-        v = sdr(output_vocal,mus_vocal)
-        b = sdr(output_background,mus_background)
+        v = si_sdr(output_vocal,mus_vocal)
+        b = si_sdr(output_background,mus_background)
         vocal.append(v)
         background.append(b)
         print("FileName: ",each, "\tSDR-BACKGROUND: " ,b,"\tSDR-VOCAL: ",v)
-
         # except:
         #     print("Error",each)
     print("AVG-SDR-VOCAL",sum(vocal)/len(vocal))
     print("AVG-SDR-BACKGROUND",sum(background)/len(background))
 
+def filter_data(pth):
+    if(pth[-1] != '/'):
+        raise ValueError("Error: pth should end with /")
+    for each in os.listdir(pth+"hhliu/"):
+        if(os.path.exists(pth+each)):
+            continue
+        print(each)
+        data = load_pickle(pth+"hhliu/"+each)
+        plt.ylim(-0.2,1)
+        plt.plot(data)
+        plt.title(each)
+        plt.savefig(pth+"pics/"+each.split(".")[-2]+".png")
+        break
+def compare_sisdr():
+    pth = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/"
+    f1 = pth+"temp.wav"
+    f2 = pth+"vocals.wav"
+    wh = WaveHandler()
+    data1 = wh.read_wave(f1,channel=1)
+    data2 = wh.read_wave(f2)
+    start = 85*44100
+    plot2wav(data1[start:start+100],data2[start:start+100])
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
 # netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
@@ -343,6 +364,7 @@ def eval_spleeter():
 def posterior_handling(output_raw):
     pass
 
-
-# spleet_pth("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
+# filter_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_filted/")
 eval_spleeter()
+# spleet_pth("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
+# eval_spleeter()

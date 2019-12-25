@@ -125,6 +125,7 @@ def stft(signal,
          frame_length=32,
          frame_shift=8,
          window_type="hanning",
+         use_gpu = False,
          preemphasis=0.0,
          square_root_window=True):
     """Compute the Short Time Fourier Transform.
@@ -146,6 +147,8 @@ def stft(signal,
     win_length = int(sample_rate * frame_length / 1000)
     num_point = fft_point(win_length)
     window = get_window(num_point, window_type, square_root_window)
+    if(use_gpu == True):
+        window = window.cuda(Config.device)
     # print(num_point,hop_length,win_length,window)#  2048 352 1411 [0.         0.00153473 0.00306946 ... 0.00306946 0.00153473 0.        ]
     # print(window.shape) # (20048,)
     # feat = librosa.stft(signal, n_fft=num_point, hop_length=hop_length,

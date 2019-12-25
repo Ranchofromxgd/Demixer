@@ -12,8 +12,8 @@ class Config:
     vocal_fname = "vocals.wav"
     epoches = 25
     use_gpu = True
-    learning_rate = 0.0003
-    accumulation_step = 50
+    learning_rate = 0.0005
+    accumulation_step = 5
     step_size = 6000
     gamma = 0.8
     sample_rate = 44100

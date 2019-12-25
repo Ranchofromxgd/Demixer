@@ -104,15 +104,15 @@ def train( # Frequency domain
             # Loss function: Energy conservation & mixed spectrom & vocal spectrom & background wave & vocal wave
             if('l1' in Config.loss_component):
                 lossVal = loss(output_track_sum, target_song)/Config.accumulation_step
-                freq_cons_loss_cache.append(float(lossVal))
+                freq_cons_loss_cache.append(float(lossVal)*Config.accumulation_step)
             if('l2' in Config.loss_component):
                 temp2 = loss(output_background,target_background)/Config.accumulation_step
                 lossVal += temp2
-                freq_loss += float(temp2)
+                freq_loss += float(temp2)*Config.accumulation_step
             if('l3' in Config.loss_component):
                 temp3 = loss(output_vocal,target_vocal)/Config.accumulation_step
                 lossVal += temp3
-                freq_loss_cache.append(freq_loss+float(temp3))
+                freq_loss_cache.append(freq_loss+float(temp3)*Config.accumulation_step)
             # if('l4' in Config.loss_component):
             #     val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
             #     lossVal = val
@@ -133,12 +133,10 @@ def train( # Frequency domain
                 wav_loss_cache.append(wav_loss+float(val8))
             # Backward
             lossVal.backward()
-            if(model.cnt%Config.accumulation_step == 0 and model.cnt != 0):
+            if(model.cnt%Config.accumulation_step == 0 and model.cnt != Config.start_point):
                 # Optimize
                 optimizer.step()
                 optimizer.zero_grad()
-
-
 
 if(not Config.start_point == 0):
     model = torch.load("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/saved_models/"+Config.trail_name+"/model"+str(Config.start_point)+".pkl",
@@ -153,7 +151,7 @@ for epoch in range(Config.epoches):
     pref = dataloader.data_prefetcher(dl)
     background, vocal, song = pref.next()
     while(background is not None):
-        if (model.cnt % every_n == 0 and model.cnt !=Config.start_point):#and model.cnt != Config.start_point
+        if (model.cnt % every_n == 0 and model.cnt != Config.start_point):#and model.cnt != Config.start_point
             print("Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
                   "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),

@@ -15,8 +15,8 @@ from util.wave_util import save_pickle,load_pickle,write_json
 from evaluate.si_sdr_numpy import si_sdr,sdr
 
 
-name ="2019_12_22_phase_spleeter_l1_l2_l3_lr0001_bs4_fl1.5_ss60000_5lnu5emptyEvery50"
-model_name = "model162000"
+name ="2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5"
+model_name = "model27000"
 
 def plot2wav(a,b):
     plt.figure(figsize=(20,4))
@@ -43,9 +43,12 @@ class SpleeterUtil:
         # for each in np.linspace(0,95,20):
         #     self.start.append(each/100)
         #     self.end.append((each+5)/100)
-        for each in np.linspace(0,98,50):
+        for each in np.linspace(0,90,10): # background: 3.694051315663441 vocal: 9.385132219243319
             self.start.append(each/100)
-            self.end.append((each+2)/100)
+            self.end.append((each+10)/100)
+        # for each in np.linspace(0,98,50): # background: 3.6012434867115646 vocal: 9.349357514298566
+        #     self.start.append(each/100)
+        #     self.end.append((each+2)/100)
 
     def evaluate(self,save_wav = True,save_json = True):
         performance = {}
@@ -141,8 +144,8 @@ class SpleeterUtil:
                     # To avoid taking one sample point into calculation twice
                     if(i != 0):
                         input_background,input_vocals = input_background[1:],input_vocals[1:]
-                    input_f_background = stft(torch.Tensor(input_background).float().cuda(Config.device),Config.sample_rate).unsqueeze(0)
-                    input_f_vocals = stft(torch.Tensor(input_vocals).float().cuda(Config.device),Config.sample_rate).unsqueeze(0)
+                    input_f_background = stft(torch.Tensor(input_background).float().cuda(Config.device),Config.sample_rate,use_gpu=True).unsqueeze(0)
+                    input_f_vocals = stft(torch.Tensor(input_vocals).float().cuda(Config.device),Config.sample_rate,use_gpu=True).unsqueeze(0)
                     input_f = (input_f_vocals+input_f_background)
                 else:
                     origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
@@ -151,7 +154,7 @@ class SpleeterUtil:
                                                portion_end=portion_end,portion_start=portion_start)
                     if (i != 0):
                         input_background = input_background[1:]
-                    input_f = stft(torch.Tensor(input_background).float().cuda(Config.device), Config.sample_rate).unsqueeze(0)
+                    input_f = stft(torch.Tensor(input_background).float().cuda(Config.device), Config.sample_rate,use_gpu=True).unsqueeze(0)
                 out = []
                 for i in range(self.model.channels):
                     # input_f = input_f.cuda(Config.device)

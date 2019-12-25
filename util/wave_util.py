@@ -43,12 +43,21 @@ class WaveHandler:
         f.close()
 
     # Only get the first channel
-    def read_wave(self, fname, channel=2,convert_to_f_domain = False,sample_rate = 44100,portion_start = 0,portion_end = 1):
+    def read_wave(self, fname,
+                  channel=2,
+                  convert_to_f_domain = False,
+                  sample_rate = 44100,
+                  portion_start = 0,
+                  portion_end = 1,
+                  show = False):
+        if(portion_end > 1):
+            portion_end = 1
         f = wave.open(fname)
         if(portion_end <= 1):
             frames = np.fromstring(f.readframes(f.getparams()[3]), dtype=np.short)
             frames.shape = -1, channel
             start, end = int(frames.shape[0] * portion_start), int(frames.shape[0] * portion_end)
+            if(show == True):print(start,end)
             frames = frames[start:end, 0]
         else:
             f.setpos(portion_start)
