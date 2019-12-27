@@ -10,7 +10,6 @@ import torch
 import numpy as np
 from util.dsp_torch import stft
 
-
 class data_prefetcher():
     def __init__(self, loader):
         self.loader = iter(loader)
@@ -49,8 +48,8 @@ class WavenetDataloader(Dataset):
                  num_worker = Config.num_workers,
                  sampleNo=20000,
                  mu = 0.5,
-                 sigma = 0.15,
-                 alpha_low = 0.2,
+                 sigma = 0.2,
+                 alpha_low = 0.1,
                  alpha_high = 0.5 # If alpha_high get a value greater than 0.5, it would have probability to overflow
     ):
         # self.music_folders = self.readList(Config.musdb_train_background)
@@ -87,7 +86,6 @@ class WavenetDataloader(Dataset):
 
         background_start = np.random.randint(0, music_length - self.sample_length)
         vocal_start = np.random.randint(0, vocal_length - self.sample_length)
-
         background_crop = self.wh.read_wave(music_fname,
                                             portion_start=background_start,
                                             portion_end=background_start+self.sample_length)
@@ -98,7 +96,11 @@ class WavenetDataloader(Dataset):
 
         # Randomly crop
         vocal_crop = vocal_crop.astype(np.float32)
-        max_background = np.max(np.abs(background_crop))
+        try:
+            max_background = np.max(np.abs(background_crop))
+        except:
+            print(background_crop)
+            exit(0)
         max_vocal = np.max(np.abs(vocal_crop))
 
         # To avoid magnify the blank vocal

@@ -100,7 +100,7 @@ def plot3wav(a,b,c):
     plt.plot(b,linewidth = 1)
     plt.subplot(313)
     plt.plot(c,linewidth = 1)
-    plt.savefig("com.png")
+    plt.savefig("commmmm1.png")
 
 def trans_mp3_folder_to_wav(root_path,save_folder):
     if(not save_folder[-1] == '/' or not root_path[-1] == '/'):
@@ -160,7 +160,7 @@ def get_total_time_in_txt(txtpath):
     # print(total_time,"s")
     # print(total_time/60,"min")
     print(txtpath.split('/')[-1].split('.')[-2],",",total_time/3600)
-    return total_time/3600,cnt
+    return total_time/3600
 
 
 def netease_filter(root_path:str,save_path:str):
@@ -328,7 +328,7 @@ def eval_spleeter():
         b = si_sdr(output_background,mus_background)
         vocal.append(v)
         background.append(b)
-        print("FileName: ",each, "\tSDR-BACKGROUND: " ,b,"\tSDR-VOCAL: ",v)
+        print("FileName: ",each, "\tSISDR-BACKGROUND: " ,b,"\tSISDR-VOCAL: ",v)
         # except:
         #     print("Error",each)
     print("AVG-SDR-VOCAL",sum(vocal)/len(vocal))
@@ -347,15 +347,26 @@ def filter_data(pth):
         plt.title(each)
         plt.savefig(pth+"pics/"+each.split(".")[-2]+".png")
         break
+
 def compare_sisdr():
-    pth = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/"
-    f1 = pth+"temp.wav"
-    f2 = pth+"vocals.wav"
+    from evaluate.si_sdr_numpy import si_sdr
+    pth = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test/2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/"
+    f1 = pth+"vocal_test_0.wav"
+    f2 = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/vocal_test_0.wav"
+    f0 = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/vocals.wav"
+    f3 = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test/2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/vocal_test_0.wav"
     wh = WaveHandler()
     data1 = wh.read_wave(f1,channel=1)
-    data2 = wh.read_wave(f2)
-    start = 85*44100
-    plot2wav(data1[start:start+100],data2[start:start+100])
+    data2 = wh.read_wave(f2,channel=1)
+    data0 = wh.read_wave(f0)
+    data3 = wh.read_wave(f3,channel=1)
+    print(data0.shape,data3.shape)
+    start = 44100*60
+    data0 = data0[start:start+20]
+    data3 = data3[start:start+20]
+    plot3wav(data0,data3,data0-data3)
+
+    print(si_sdr(data3,data0))
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
 # netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
@@ -364,7 +375,30 @@ def compare_sisdr():
 def posterior_handling(output_raw):
     pass
 
-# filter_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_filted/")
-eval_spleeter()
+def nus_smc_corpus():
+    song = Config.datahub_root+"nus-smc-corpus_48/"
+    song_dir = []
+    for each in os.listdir(song):
+        delete_unproper_training_data(song + each+"/sing/")
+        for file in os.listdir(song+each+"/sing/"):
+            if(file.split('.')[-1] == 'wav'):
+                song_dir.append(song + each+"/sing/"+file)
+    write_list(song_dir,Config.datahub_root+"datahub/nus_smc_corpus_48.txt")
+
+# delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
+filter_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_filted/")
+# compare_sisdr()
+# eval_spleeter()
 # spleet_pth("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
 # eval_spleeter()
+
+# nus_smc_corpus()
+
+vocal = 0
+back = 0
+for each in Config.vocal_data:
+    vocal += get_total_time_in_txt(each)
+for each in Config.background_data:
+    back += get_total_time_in_txt(each)
+
+print(vocal,back)

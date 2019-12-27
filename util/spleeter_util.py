@@ -14,18 +14,27 @@ from util.dsp_torch import stft,istft,spectrom2magnitude,seperate_magnitude
 from util.wave_util import save_pickle,load_pickle,write_json
 from evaluate.si_sdr_numpy import si_sdr,sdr
 
+# model162000
+name ="2019_12_22_phase_spleeter_l1_l2_l3_lr0001_bs4_fl1.5_ss60000_5lnu5emptyEvery50"
+model_name = "model162000"
 
-name ="2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5"
-model_name = "model27000"
-
-def plot2wav(a,b):
+def plot2wav(a,b,fname):
     plt.figure(figsize=(20,4))
     plt.subplot(211)
     plt.plot(a)
     plt.subplot(212)
     plt.plot(b)
-    plt.savefig("temp.png")
-
+    plt.savefig(fname)
+def plot3wav(a,b,c):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(30,6))
+    plt.subplot(311)
+    plt.plot(a,linewidth = 1)
+    plt.subplot(312)
+    plt.plot(b,linewidth = 1)
+    plt.subplot(313)
+    plt.plot(c,linewidth = 1)
+    plt.savefig("commmmm1.png")
 
 
 class SpleeterUtil:
@@ -38,17 +47,22 @@ class SpleeterUtil:
             self.model = model_pth
         self.test_pth = test_pth
         self.wh = wave_util.WaveHandler()
+
+        # We use this segment to avoid STFT's loss of sample points
+        self.tiny_segment = 1
+
+        #This is for better precision in float!
         self.start = []
         self.end = []
-        # for each in np.linspace(0,95,20):
-        #     self.start.append(each/100)
-        #     self.end.append((each+5)/100)
-        for each in np.linspace(0,90,10): # background: 3.694051315663441 vocal: 9.385132219243319
-            self.start.append(each/100)
-            self.end.append((each+10)/100)
-        # for each in np.linspace(0,98,50): # background: 3.6012434867115646 vocal: 9.349357514298566
-        #     self.start.append(each/100)
-        #     self.end.append((each+2)/100)
+        self.realend = []
+        # for each in np.linspace(0,980,50):
+        #     self.start.append(each/1000)
+        #     self.end.append((each+20+self.tiny_segment)/1000)
+        #     self.realend.append((each+20)/1000)
+        for each in np.linspace(0,980,50):
+            self.start.append(each/1000)
+            self.end.append((each+20+self.tiny_segment)/1000)
+            self.realend.append((each+20)/1000)
 
     def evaluate(self,save_wav = True,save_json = True):
         performance = {}
@@ -59,7 +73,11 @@ class SpleeterUtil:
             performance[each] = {}
             background_fpath = self.test_pth+each+"/"+Config.background_fname
             vocal_fpath = self.test_pth+each+"/"+Config.vocal_fname
-            background, vocal, origin_background, origin_vocals = self.split(background_fpath,vocal_fpath,use_gpu=True,save=False)
+            background, vocal, origin_background, origin_vocals = self.split(background_fpath,
+                                                                             vocal_fpath,
+                                                                             use_gpu=True,
+                                                                             save=False
+                                                                             )
             background_min_length = min(background.shape[0],origin_background.shape[0])
             vocal_min_length = min(vocal.shape[0],origin_vocals.shape[0])
 
@@ -67,17 +85,17 @@ class SpleeterUtil:
             sdr_vocal = si_sdr(vocal[:vocal_min_length],origin_vocals[:vocal_min_length])
 
             if (save_wav == True):
-                if (not os.path.exists(Config.project_root + "outputs/" + name + model_name + "/")):
-                    print("mkdir: " + Config.project_root + "outputs/" + name + model_name + "/")
-                    os.mkdir(Config.project_root + "outputs/" + name + model_name + "/")
+                if (not os.path.exists(Config.project_root + "outputs/musdb_test/" + name + model_name + "/")):
+                    print("mkdir: " + Config.project_root + "outputs/musdb_test/" + name + model_name + "/")
+                    os.mkdir(Config.project_root + "outputs/musdb_test/" + name + model_name + "/")
                 self.wh.save_wave((background[:background_min_length]).astype(np.int16),
-                                  Config.project_root + "outputs/" + name + model_name + "/background_" + each + ".wav",
+                                  Config.project_root + "outputs/musdb_test/" + name + model_name + "/background_" + each + ".wav",
                                   channels=1)
                 # self.wh.save_wave((origin_background[:background_min_length]).astype(np.int16),
                 #                   Config.project_root + "outputs/" + name + model_name + "/origin_background_" + each + ".wav",
                 #                   channels=1)
                 self.wh.save_wave((vocal[:vocal_min_length]).astype(np.int16),
-                                  Config.project_root + "outputs/" + name + model_name + "/vocal_" + each + ".wav",
+                                  Config.project_root + "outputs/musdb_test/" + name + model_name + "/vocal_" + each + ".wav",
                                   channels=1)
                 # self.wh.save_wave((origin_vocals[:vocal_min_length]).astype(np.int16),
                 #                   Config.project_root + "outputs/" + name + model_name + "/origin_vocals_" + each + ".wav",
@@ -94,7 +112,7 @@ class SpleeterUtil:
         performance["ALL"]["sdr_background"] = sum(performance["ALL"]["sdr_background"] )/(len(performance["ALL"]["sdr_background"])-1)
         performance["ALL"]["sdr_vocal"] = sum(performance["ALL"]["sdr_vocal"] )/(len(performance["ALL"]["sdr_vocal"])-1)
         if(save_json == True):
-            write_json(performance, Config.project_root+"evaluate/result_" + name + model_name + ".json")
+            write_json(performance, Config.project_root+"outputs/musdb_test/"+name + model_name + "/result_" + name + model_name + ".json")
         print("Result:")
         print("Evaluation on "+str(len(pth))+" songs")
         print("sdr_background: "+str(performance["ALL"]["sdr_background"]))
@@ -104,9 +122,11 @@ class SpleeterUtil:
     def split(self,
               background_fpath,
               vocal_fpath = None,
-              require_merge = True,
               use_gpu = False,
-              save = True
+              save = True,
+              fname = "temp",
+              save_path=Config.project_root,
+              scale = 1.0
               ):
         '''
         :param background_fpath: required, if vocal_fpath is None, then background_path should be file with both background and vocal
@@ -116,23 +136,26 @@ class SpleeterUtil:
         :param model_pth: the pre-trained model to be used
         :return: None
         '''
-        background = np.empty([])
-        vocal = np.empty([])
+        if(save_path[-1]!='/'):
+            raise ValueError("Error: path should end with /")
+        background = np.empty(0)
+        vocal = np.empty(0) # Different from empty([])
+        lens = 0
+        if (vocal_fpath != None):
+            origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
+            origin_vocal = self.wh.read_wave(fname=vocal_fpath, sample_rate=Config.sample_rate)
+        else:
+            origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
         with torch.no_grad():
             start = time.time()
-            # for portion_start in np.linspace(0,0.985,198):
-            # for portion_start in np.linspace(0,0.98,50):
-            # for portion_start in np.linspace(0,0.9,10):
             for i in range(len(self.start)):
-                portion_start,portion_end = self.start[i],self.end[i]
+                portion_start,portion_end,real_end= self.start[i],self.end[i],self.realend[i]
                 input_t_background = self.wh.read_wave(fname=background_fpath,
                                                   sample_rate=Config.sample_rate,
-                                                  portion_end=portion_end,
+                                                  portion_end=real_end,
                                                   portion_start=portion_start)
-                if(require_merge == True):
-                    origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
-                    origin_vocal = self.wh.read_wave(fname=vocal_fpath, sample_rate=Config.sample_rate)
 
+                if(vocal_fpath != None):
                     input_background = self.wh.read_wave(fname=background_fpath
                                                ,sample_rate=Config.sample_rate
                                                ,portion_end = portion_end,
@@ -141,47 +164,66 @@ class SpleeterUtil:
                                                 ,sample_rate=Config.sample_rate
                                                 ,portion_end = portion_end,
                                                      portion_start=portion_start)
-                    # To avoid taking one sample point into calculation twice
-                    if(i != 0):
-                        input_background,input_vocals = input_background[1:],input_vocals[1:]
+                    # if (i != 0):
+                    #     input_background,input_vocals = input_background[1:],input_vocals[1:]
+                    # Construct Spectrom of Song
                     input_f_background = stft(torch.Tensor(input_background).float().cuda(Config.device),Config.sample_rate,use_gpu=True).unsqueeze(0)
                     input_f_vocals = stft(torch.Tensor(input_vocals).float().cuda(Config.device),Config.sample_rate,use_gpu=True).unsqueeze(0)
                     input_f = (input_f_vocals+input_f_background)
                 else:
-                    origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
                     input_background = self.wh.read_wave(fname=background_fpath,
                                                sample_rate=Config.sample_rate,
                                                portion_end=portion_end,portion_start=portion_start)
-                    if (i != 0):
-                        input_background = input_background[1:]
+                    # if (i != 0):
+                    #     input_background = input_background[1:]
                     input_f = stft(torch.Tensor(input_background).float().cuda(Config.device), Config.sample_rate,use_gpu=True).unsqueeze(0)
                 out = []
-                for i in range(self.model.channels):
-                    # input_f = input_f.cuda(Config.device)
-                    data = self.model.forward(i, input_f)*input_f
-                    out.append(data.squeeze(0))
+                # Forward and mask
+                for ch in range(self.model.channels):
+                    data = self.model.forward(ch, input_f)*input_f
+                    out.append(data.squeeze(0)*scale)
+                # Inverse STFT
                 for count, each in enumerate(out):
                     if(count == 0):
                         construct_background = istft(each,sample_rate=Config.sample_rate,use_gpu=use_gpu).cpu().numpy()
                     else:
                         construct_vocal = istft(each,sample_rate=Config.sample_rate,use_gpu=use_gpu).cpu().numpy()
 
-                # Compensate the lost samples points from istft
-                pad_length = input_t_background.shape[0]- construct_background.shape[0]
-                construct_background = np.pad(construct_background,(0,pad_length),'constant',constant_values=(0,0))
-                construct_vocal = np.pad(construct_vocal,(0,pad_length),'constant',constant_values=(0,0))
+                # The last segment's stft loss could not be compensatedn with a little margin
+                if(i == (len(self.start)-1)):
+                    pad_length = input_t_background.shape[0]- construct_background.shape[0]
+                    construct_background = np.pad(construct_background,(0,pad_length),'constant',constant_values=(0,0))
+                    construct_vocal = np.pad(construct_vocal,(0,pad_length),'constant',constant_values=(0,0))
+                else:
+                    real_length = input_t_background.shape[0]
+                    construct_background = construct_background[:real_length]
+                    construct_vocal = construct_vocal[:real_length]
                 background = np.append(background,construct_background)
                 vocal = np.append(vocal,construct_vocal)
-
             end = time.time()
             print('time cost',end-start,'s')
         if (save == True):
-            print(background.shape)
-            self.wh.save_wave((background).astype(np.int16),Config.project_root+"outputs/"+background_fpath+"_background.wav",channels=1)
-            self.wh.save_wave((vocal).astype(np.int16),Config.project_root+"outputs/"+background_fpath+"_vocal.wav",channels=1)
+            self.wh.save_wave((background).astype(np.int16),save_path+fname+"_background.wav",channels=1)
+            self.wh.save_wave((vocal).astype(np.int16),save_path+fname+"_vocal.wav",channels=1)
             print("Split work finish!")
         if(not vocal_fpath == None): return background,vocal,origin_background,origin_vocal
         else: return background,vocal,origin_background
+
+    def Split_listener(self,pth = Config.project_root+"evaluate/raw_wave/"):
+        output_path = Config.project_root+"outputs/listener/"+name+model_name+"/"
+        if(not os.path.exists(output_path)):
+            os.mkdir(output_path)
+        for each in os.listdir(pth):
+            if(each.split('.')[-1] != 'wav'):
+                continue
+            print(each)
+            file = each.split('.')[-2]
+            self.split(background_fpath=pth+each,
+                     save=True,
+                     save_path=output_path,
+                     fname = file,
+                     use_gpu=True,
+                     scale=0.5)
 
 if __name__ == "__main__":
     vocal = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_5/vocals.wav"
@@ -193,6 +235,7 @@ if __name__ == "__main__":
     path = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/saved_models/"+name+"/"+model_name+".pkl"
     su = SpleeterUtil(model_pth = path)
     su.evaluate()
+    su.Split_listener()
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])
     # vocal_min_length = min(vocal.shape[0], origin_vocal.shape[0])
@@ -200,9 +243,6 @@ if __name__ == "__main__":
     # sdr_background = sdr(background[:background_min_length], origin_background[:background_min_length])
     # sdr_vocal = sdr(vocal[:vocal_min_length], origin_vocal[:vocal_min_length])
     # print(sdr_background,sdr_vocal)
-
-    # su.split(background_fpath="../xuemaojiao.wav",save=True,require_merge=False,use_gpu=True)
-    # su.split(background_fpath="../welcome_to_beijing.wav",save=True,require_merge=False,use_gpu=True)
 
 
 

@@ -10,14 +10,14 @@ class Config:
     train_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/train/"
     background_fname = "background.wav"
     vocal_fname = "vocals.wav"
-    epoches = 25
+    epoches = 200
     use_gpu = True
     learning_rate = 0.0005
-    accumulation_step = 5
-    step_size = 6000
+    accumulation_step = 10
+    step_size = 12000
     gamma = 0.8
     sample_rate = 44100
-    batch_size = 4
+    batch_size = 2
     num_workers = batch_size
     frame_length = 1.5
 
@@ -42,16 +42,24 @@ class Config:
         musdb_train_vocal,
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/k_pop.txt", # 44
+        datahub_root + "datahub/干声（纯人声系）.txt",
+        datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
+        datahub_root + "datahub/[Rap清唱]感受最真实的声音.txt",
+        datahub_root + "datahub/贺国丰（清唱陕北民歌）.txt",
     ]
     background_data = [
         musdb_train_background,
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
         # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
-        # datahub_root + "datahub/pure_music_7.txt",
-        # datahub_root + "datahub/pure_music_9.txt",
+        datahub_root + "datahub/pure_music_7.txt",
+        datahub_root + "datahub/pure_music_1.txt",
+        datahub_root + "datahub/pure_music_9.txt",
+        datahub_root + "datahub/pure_music_8.txt",
+        datahub_root + "datahub/Artpop(Intrumental).txt",
         # datahub_root + "datahub/纯伴奏byLHH.txt",
         datahub_root + "datahub/纯伴奏byLHH.txt",
+        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
         datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
     ]
     # background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
@@ -59,7 +67,7 @@ class Config:
     # background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
     # background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
 
-    device = torch.device("cuda:1" if use_gpu else "cpu")
+    device = torch.device("cuda:0" if use_gpu else "cpu")
 
     # config for stft and istft
     stft_frame_shift = 8
@@ -68,7 +76,7 @@ class Config:
     # Reload pre-trained model
     start_point = 0
     # model
-    layer_numbers_unet = 5
+    layer_numbers_unet = 6
     # Loss function
     '''
     l1: Frequency domain energy conservation l1 loss

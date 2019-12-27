@@ -161,7 +161,7 @@ for epoch in range(Config.epoches):
             freq_loss_cache = []
             wav_cons_loss_cache = []
             freq_cons_loss_cache = []
-            if (model.cnt % 9000 == 0):
+            if (model.cnt % 18000 == 0):
                 save_and_evaluation()
         # f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
         f_background, f_vocal, f_song = background, vocal, song

@@ -50,15 +50,18 @@ class WaveHandler:
                   portion_start = 0,
                   portion_end = 1,
                   show = False):
-        if(portion_end > 1):
+        if(portion_end > 1 and portion_end < 1.1):
             portion_end = 1
         f = wave.open(fname)
         if(portion_end <= 1):
             frames = np.fromstring(f.readframes(f.getparams()[3]), dtype=np.short)
             frames.shape = -1, channel
             start, end = int(frames.shape[0] * portion_start), int(frames.shape[0] * portion_end)
-            if(show == True):print(start,end)
             frames = frames[start:end, 0]
+            if (show == True):
+                print(start, end)
+                print(frames.shape)
+
         else:
             f.setpos(portion_start)
             temp = f.readframes(portion_end-portion_start)
@@ -118,7 +121,7 @@ if __name__ == "__main__":
                           portion_start=44100*40,
                           portion_end = 44100*41)
     print(frames.shape)
-    wh.save_wave(frames.astype(np.int16),"temp.wav")
+    # wh.save_wave(frames.astype(np.int16),"temp.wav")
 
 
 
