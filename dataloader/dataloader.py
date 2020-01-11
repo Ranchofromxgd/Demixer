@@ -47,10 +47,10 @@ class WavenetDataloader(Dataset):
     def __init__(self,sample_length = Config.sample_rate*Config.frame_length,
                  num_worker = Config.num_workers,
                  sampleNo=20000,
-                 mu = 0.5,
-                 sigma = 0.2,
-                 alpha_low = 0.1,
-                 alpha_high = 0.5 # If alpha_high get a value greater than 0.5, it would have probability to overflow
+                 mu = Config.mu,
+                 sigma = Config.sigma,
+                 alpha_low = Config.alpha_low,
+                 alpha_high = Config.alpha_high # If alpha_high get a value greater than 0.5, it would have probability to overflow
     ):
         # self.music_folders = self.readList(Config.musdb_train_background)
         self.music_folders = []
@@ -72,6 +72,7 @@ class WavenetDataloader(Dataset):
         self.normal_distribution = self.normal_distribution[self.normal_distribution > alpha_low]
         self.normal_distribution = self.normal_distribution[self.normal_distribution < alpha_high]
         self.sampleNo = self.normal_distribution.shape[0]
+
     def __getitem__(self, item):
         self.data_counter += 1
         np.random.seed(os.getpid()+self.cnt)

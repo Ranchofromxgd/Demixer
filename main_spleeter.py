@@ -24,10 +24,18 @@ if (not os.path.exists(Config.project_root + "saved_models/" + Config.trail_name
     os.mkdir(Config.project_root + "saved_models/" + Config.trail_name + "/")
     print("MakeDir: " + Config.project_root + "saved_models/" + Config.trail_name)
 
+print("Vocal Data:")
+for each in Config.vocal_data:
+    print(each)
+print("Background Data")
+for each in Config.background_data:
+    print(each)
+
 write_list(Config.background_data, Config.project_root + "saved_models/" + Config.trail_name + "/" + "data_background.txt")
 write_list(Config.vocal_data, Config.project_root + "saved_models/" + Config.trail_name + "/" + "data_vocal.txt")
 
 loss = torch.nn.L1Loss()
+# loss = torch.nn.MSELoss()
 
 # Cache for data
 wav_loss_cache = []
@@ -54,13 +62,15 @@ def save_and_evaluation():
     print("Start evaluation...")
     model.eval()
     su = SpleeterUtil(model_pth=model)
-    sdr_background, sdr_vocal = su.evaluate(save_wav=False, save_json=False)
+    sdr_background, sdr_vocal = su.evaluate(save_wav=True, save_json=False)
+    su.Split_listener()
     sdr_background_cache.append(sdr_background)
     sdr_vocal_cache.append(sdr_vocal)
     print("REFERENCE FOR EARILY STOPPING:")
     print("sdr_vocal", sdr_vocal_cache)
     print("sdr_background", sdr_background_cache)
     model.train()
+    del su
 
 def train( # Frequency domain
             target_background,
@@ -139,7 +149,7 @@ def train( # Frequency domain
                 optimizer.zero_grad()
 
 if(not Config.start_point == 0):
-    model = torch.load("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/saved_models/"+Config.trail_name+"/model"+str(Config.start_point)+".pkl",
+    model = torch.load(Config.project_root+"saved_models/"+Config.trail_name+"/model"+str(Config.start_point)+".pkl",
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
@@ -152,7 +162,7 @@ for epoch in range(Config.epoches):
     background, vocal, song = pref.next()
     while(background is not None):
         if (model.cnt % every_n == 0 and model.cnt != Config.start_point):#and model.cnt != Config.start_point
-            print("Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
+            print(str(model.cnt)+" - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
                   "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
                   "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
@@ -161,7 +171,7 @@ for epoch in range(Config.epoches):
             freq_loss_cache = []
             wav_cons_loss_cache = []
             freq_cons_loss_cache = []
-            if (model.cnt % 18000 == 0):
+            if (model.cnt % 12000 == 0):
                 save_and_evaluation()
         # f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
         f_background, f_vocal, f_song = background, vocal, song

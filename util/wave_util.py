@@ -27,8 +27,6 @@ class FixLengthDictionary:
             return self.content[fname]
         return np.empty([])
 
-
-
 class WaveHandler:
     def __init__(self):
         self.wav_cache = FixLengthDictionary(maxlength=20)
@@ -49,12 +47,16 @@ class WaveHandler:
                   sample_rate = 44100,
                   portion_start = 0,
                   portion_end = 1,
-                  show = False):
+                  show = False,
+                  needRaw = False): # Whether you want raw bytes
         if(portion_end > 1 and portion_end < 1.1):
             portion_end = 1
         f = wave.open(fname)
         if(portion_end <= 1):
-            frames = np.fromstring(f.readframes(f.getparams()[3]), dtype=np.short)
+            raw = f.readframes(f.getparams()[3])
+            if (needRaw == True): return raw
+            frames = np.fromstring(raw, dtype=np.short)
+            if(frames.shape[0] % 2 == 1):frames = np.append(frames,0)
             frames.shape = -1, channel
             start, end = int(frames.shape[0] * portion_start), int(frames.shape[0] * portion_end)
             frames = frames[start:end, 0]
@@ -64,8 +66,10 @@ class WaveHandler:
 
         else:
             f.setpos(portion_start)
-            temp = f.readframes(portion_end-portion_start)
-            frames = np.fromstring(temp, dtype=np.short) #This one is too slow!!!
+            raw = f.readframes(portion_end-portion_start)
+            if(needRaw == True):return raw
+            frames = np.fromstring(raw, dtype=np.short) #This one is too slow!!!
+            if (frames.shape[0] % 2 == 1): frames = np.append(frames, 0)
             frames.shape = -1, channel
             frames = frames[:,0]
 
@@ -113,15 +117,6 @@ def load_json(fname):
     with open(fname,'r') as f:
         data = json.load(f)
         return data
-
-
-if __name__ == "__main__":
-    wh = WaveHandler()
-    frames = wh.read_wave("/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_22/combined.wav",
-                          portion_start=44100*40,
-                          portion_end = 44100*41)
-    print(frames.shape)
-    # wh.save_wave(frames.astype(np.int16),"temp.wav")
 
 
 

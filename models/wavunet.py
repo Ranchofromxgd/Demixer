@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 # from model.modules import Conv1d, Conv1dBlock, ConvTranspose1d, normalization, ConvTranspose1dPReLUBN
 
-sys.path.append('/home/work_nfs/hhliu/workspace/github/wavenet-aslp/')
+sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 from config.wavenetConfig import Config
 from models.show import show_model, show_params
 from evaluate.si_sdr_torch import permute_si_sdr
@@ -159,6 +159,3 @@ class TasNet(nn.Module):
         # print(source.shape)
         loss = permute_si_sdr(output, source, device)
         return loss
-
-if __name__ == "__main__":
-    model = torch.load("/home/work_nfs/hhliu/workspace/github/wavenet-aslp/saved_models/model34000.pkl",map_location='cpu')

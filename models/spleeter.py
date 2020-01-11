@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/home/work_nfs/hhliu/workspace/github/wavenet-aslp")
+from config.wavenetConfig import Config
+sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 from models.unet_model import UNet
 from torch import nn
 

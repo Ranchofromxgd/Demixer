@@ -6,9 +6,17 @@ import numpy as np
 from util.wave_util import WaveHandler
 from pydub import AudioSegment
 from config.wavenetConfig import Config
+import torch
 from util.wave_util import save_pickle,load_pickle
+
+datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
+
+musdb_test_pth = datahub_root+"musdb18hq/test/"
+musdb_train_pth = datahub_root+"musdb18hq/train/"
+
+
 def analysis_cache():
-    fname = "/home/work_nfs/hhliu/workspace/github/wavenet-aslp/dataloader/wavenet/temp"
+    fname = Config.project_root+"dataloader/wavenet/temp"
     with open(fname,'r') as f:
         line = f.readline().strip().split()
     for i in range(len(line)):
@@ -31,16 +39,16 @@ def write_list(l,fname):
             f.write(each+"\n")
 
 def Song_data():
-    dir = "/home/disk2/internship_anytime/liuhaohe/datasets/seg_song_data/"
+    dir = Config.datahub_root+"seg_song_data/"
     res = []
     for cnt,fname in enumerate(os.listdir(dir)):
         res.append(dir+fname)
-    write_list(res,"/home/disk2/internship_anytime/liuhaohe/datasets/song_vocal_data_44_1.txt")
+    write_list(res,Config.datahub_root+"song_vocal_data_44_1.txt")
 
 def seg_data():
     wh = WaveHandler()
-    dir = "/home/work_nfs/hhliu/datasets/song/441_song_data/"
-    seg_dir = "/home/work_nfs/hhliu/datasets/song/seg_song_data/"
+    dir = Config.datahub_root+"song/441_song_data/"
+    seg_dir = Config.datahub_root+"song/seg_song_data/"
     for cnt,fname in enumerate(os.listdir(dir)):
         print("Doing segmentation on ",fname+"...")
         unseg_f = dir+fname
@@ -51,7 +59,7 @@ def seg_data():
             wh.save_wave(seg_data,seg_dir+fname.split('.')[-2]+"_"+str('%.2f' % start)+".wav",channels=2)
 
 def pure_music():
-    path = "/home/work_nfs/hhliu/datasets/pure_music/"
+    path = Config.datahub_root+"pure_music/"
     pth_name = [path+each for each in os.listdir(path)]
     log = []
     for cnt,each in enumerate(pth_name):
@@ -240,14 +248,10 @@ def merge_musdb():
         os.system("sox -m "+train_dir+"vocals.wav "+train_dir+"background.wav "+train_dir+"combined.wav")
         print("ok2")
 
-datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
-
-musdb_test_pth = datahub_root+"musdb18hq/test/"
-musdb_train_pth = datahub_root+"musdb18hq/train/"
 # spleeter separate -i combined.wav -p spleeter:2stems -o output
 def spleet_musdb():
-    output_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/test/"
-    output_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/train/"
+    output_test_pth = Config.datahub_root+"musdb18hq/spleeter_out/test/"
+    output_train_pth = Config.datahub_root+"musdb18hq/spleeter_out/train/"
 
     for each in os.listdir(musdb_test_pth):
         print(each)
@@ -268,7 +272,7 @@ def spleet_musdb():
 
 
 def spleet_pth(input_pth):
-    output_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/netease/"
+    output_pth = Config.datahub_root+"musdb18hq/spleeter_out/netease/"
     for each in os.listdir(input_pth):
         print(each)
         # if (os.path.exists(output_pth + each + "/" + "output/combined/vocals.wav")
@@ -286,10 +290,10 @@ def unify(source,target):
 def eval_spleeter():
     wh = WaveHandler()
     from evaluate.si_sdr_numpy import sdr,si_sdr
-    output_test_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/test/"
-    output_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/spleeter_out/train/"
-    mus_train_pth = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/train/"
-    mus_test_pth= "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/"
+    output_test_pth = Config.datahub_root+"musdb18hq/spleeter_out/test/"
+    output_train_pth = Config.datahub_root+"musdb18hq/spleeter_out/train/"
+    mus_train_pth = Config.datahub_root+"musdb18hq/train/"
+    mus_test_pth= Config.datahub_root+"musdb18hq/test/"
 
     vocal = []
     background = []
@@ -348,33 +352,6 @@ def filter_data(pth):
         plt.savefig(pth+"pics/"+each.split(".")[-2]+".png")
         break
 
-def compare_sisdr():
-    from evaluate.si_sdr_numpy import si_sdr
-    pth = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test/2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/"
-    f1 = pth+"vocal_test_0.wav"
-    f2 = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/vocal_test_0.wav"
-    f0 = "/home/disk2/internship_anytime/liuhaohe/datasets/musdb18hq/test/test_0/vocals.wav"
-    f3 = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/outputs/musdb_test/2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5model99000/vocal_test_0.wav"
-    wh = WaveHandler()
-    data1 = wh.read_wave(f1,channel=1)
-    data2 = wh.read_wave(f2,channel=1)
-    data0 = wh.read_wave(f0)
-    data3 = wh.read_wave(f3,channel=1)
-    print(data0.shape,data3.shape)
-    start = 44100*60
-    data0 = data0[start:start+20]
-    data3 = data3[start:start+20]
-    plot3wav(data0,data3,data0-data3)
-
-    print(si_sdr(data3,data0))
-# netease_filter(Config.datahub_root+"pure_music_mp3/"
-#                ,Config.datahub_root+"pure_music_wav/")
-# netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
-# report_data()
-
-def posterior_handling(output_raw):
-    pass
-
 def nus_smc_corpus():
     song = Config.datahub_root+"nus-smc-corpus_48/"
     song_dir = []
@@ -385,20 +362,18 @@ def nus_smc_corpus():
                 song_dir.append(song + each+"/sing/"+file)
     write_list(song_dir,Config.datahub_root+"datahub/nus_smc_corpus_48.txt")
 
-# delete_unproper_training_data("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
-filter_data("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_filted/")
-# compare_sisdr()
-# eval_spleeter()
-# spleet_pth("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/evaluate/raw_wave/")
-# eval_spleeter()
 
-# nus_smc_corpus()
+# netease_filter(Config.datahub_root+"pure_music_mp3/"
+#                ,Config.datahub_root+"pure_music_wav/")
+netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
+report_data()
 
-vocal = 0
-back = 0
-for each in Config.vocal_data:
-    vocal += get_total_time_in_txt(each)
-for each in Config.background_data:
-    back += get_total_time_in_txt(each)
 
-print(vocal,back)
+
+
+# mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
+# mask = posterior_handling(torch.Tensor(mask[1]))
+
+# plt.figure(figsize=(20,3))
+# plt.imshow(torch.sum(mask,2))
+# plt.savefig("temp.png")

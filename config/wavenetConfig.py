@@ -12,21 +12,21 @@ class Config:
     vocal_fname = "vocals.wav"
     epoches = 200
     use_gpu = True
-    learning_rate = 0.0005
-    accumulation_step = 10
-    step_size = 12000
+    learning_rate = 0.0001
+    accumulation_step = 5
+    step_size = 60000
     gamma = 0.8
     sample_rate = 44100
-    batch_size = 2
+    batch_size = 1
     num_workers = batch_size
-    frame_length = 1.5
+    frame_length = 1
 
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
     datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
 
     # trail_name = 'phase_spleeter_musdb'
     cur = datetime.datetime.now()
-    trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+'phase_spleeter_'
+    trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+'FC-dense_spleeter_'
     # Dataset
     #musdb18hq
     musdb_test_pth = datahub_root+"musdb18hq/test/"
@@ -40,32 +40,41 @@ class Config:
     # musdb: 100
     vocal_data = [
         musdb_train_vocal,
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/干声（纯人声系）.txt",
-        datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
-        datahub_root + "datahub/[Rap清唱]感受最真实的声音.txt",
-        datahub_root + "datahub/贺国丰（清唱陕北民歌）.txt",
+        # datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
+        # datahub_root + "datahub/k_pop.txt", # 44
+        # datahub_root + "datahub/干声（纯人声系）.txt",
+        # datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
+        # datahub_root + "datahub/[Rap清唱]感受最真实的声音.txt",
+        # datahub_root + "datahub/贺国丰（清唱陕北民歌）.txt",
     ]
+
+    # vocal_data += [datahub_root + "datahub/song_vocal_data_44_1.txt"]*3
+    # vocal_data += [musdb_train_vocal]*3
+
     background_data = [
         musdb_train_background,
-        datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
-        datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
+        # datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
+        # datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
         # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
-        datahub_root + "datahub/pure_music_7.txt",
-        datahub_root + "datahub/pure_music_1.txt",
-        datahub_root + "datahub/pure_music_9.txt",
-        datahub_root + "datahub/pure_music_8.txt",
-        datahub_root + "datahub/Artpop(Intrumental).txt",
+        # datahub_root + "datahub/pure_music_7.txt",
+        # datahub_root + "datahub/pure_music_1.txt",
+        # datahub_root + "datahub/pure_music_9.txt",
+        # datahub_root + "datahub/pure_music_8.txt",
+        # datahub_root + "datahub/Artpop(Intrumental).txt",
         # datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
-        datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
+        # datahub_root + "datahub/纯伴奏byLHH.txt",
+        # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
+        # datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
     ]
     # background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
     # background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]
     # background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
     # background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
+
+    mu = 0.5
+    sigma = 0.2
+    alpha_low = 0.49
+    alpha_high = 0.5
 
     device = torch.device("cuda:0" if use_gpu else "cpu")
 
@@ -76,12 +85,12 @@ class Config:
     # Reload pre-trained model
     start_point = 0
     # model
-    layer_numbers_unet = 6
+    layer_numbers_unet = 5
     # Loss function
     '''
     l1: Frequency domain energy conservation l1 loss
     l2: Frequency domain l1 loss on background
-    l3: Frequency domain l1 loss on vocal
+    l3: Frequency domain l1 loss on vocal 
     l4: Time domain sdr loss on background
     l5: Time domain sdr loss on vocal
     l6: Time domain energy conservation l1 loss
@@ -107,8 +116,8 @@ class Config:
                 +"bs"+str(batch_size)+"_"\
                 +"fl"+str(frame_length)+"_"\
                 +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
-                +"lnu"+str(layer_numbers_unet)
-
+                +"lnu"+str(layer_numbers_unet)\
+                +"mu"+str(mu)+"sig"+str(sigma)+"low"+str(alpha_low)+"hig"+str(alpha_high)
     temp = []
 
 
