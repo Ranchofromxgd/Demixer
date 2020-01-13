@@ -10,6 +10,7 @@ import os
 import time
 from util.spleeter_util import SpleeterUtil
 
+
 def write_list(l,fname):
     with open(fname,'w') as f:
         for each in l:
@@ -47,6 +48,8 @@ sdr_background_cache, sdr_vocal_cache = [],[]
 
 wh = WaveHandler()
 model = Spleeter(channels=2,unet_inchannels=2,unet_outchannels=2).cuda(Config.device)
+# print(model)
+print(Config.model_name)
 dl = torch.utils.data.DataLoader(
     dataloader.WavenetDataloader(),
     batch_size=Config.batch_size,
@@ -85,7 +88,8 @@ def train( # Frequency domain
     output_track = []
     # For each channels
     for track_i in range(Config.channels):
-        out = model.forward(track_i,target_song)* target_song
+        if(Config.OUTPUT_MASK): out = model.forward(track_i,target_song)* target_song
+        else: out = model.forward(track_i,target_song)
         output_track.append(out)
         # All tracks is done
         if(track_i == Config.channels-1):
@@ -153,8 +157,8 @@ if(not Config.start_point == 0):
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
-every_n = 100
-
+every_n = 10
+t0 = time.time()
 for epoch in range(Config.epoches):
     print("EPOCH: ", epoch)
     start = time.time()
@@ -162,17 +166,20 @@ for epoch in range(Config.epoches):
     background, vocal, song = pref.next()
     while(background is not None):
         if (model.cnt % every_n == 0 and model.cnt != Config.start_point):#and model.cnt != Config.start_point
+            t1 = time.time()
             print(str(model.cnt)+" - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
                   "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
                   "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
-                  "\tlr:",optimizer.param_groups[0]['lr'])
+                  "\tlr:",optimizer.param_groups[0]['lr'],
+                  "\tspeed:",(every_n*Config.frame_length*Config.batch_size)/(t1-t0))
             wav_loss_cache = []
             freq_loss_cache = []
             wav_cons_loss_cache = []
             freq_cons_loss_cache = []
             if (model.cnt % 12000 == 0):
                 save_and_evaluation()
+            t0 = time.time()
         # f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
         f_background, f_vocal, f_song = background, vocal, song
         train(target_background=f_background,

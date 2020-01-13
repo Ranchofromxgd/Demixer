@@ -2,6 +2,7 @@ import sys
 from config.wavenetConfig import Config
 sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
 from models.unet_model import UNet
+from models.DenseUNET import DenseUnet
 from torch import nn
 
 from config.wavenetConfig import Config
@@ -18,7 +19,9 @@ class Spleeter(nn.Module):
         self.cnt = 0
         self.sigmoid = nn.Sigmoid()
         for channel in range(channels):
-            model = UNet(n_channels = unet_inchannels,n_classes = unet_outchannels)
+            if(Config.model_name == "Unet"):model = UNet(n_channels = unet_inchannels,n_classes = unet_outchannels)
+            elif(Config.model_name == "DenseUnet"):model = DenseUnet(n_channels = unet_inchannels,n_classes = unet_outchannels)
+            else:raise ValueError("Error: Non-exist model name")
             if(Config.device == 'cpu'):exec("self.unet{}=model".format(channel))
             else:exec("self.unet{}=model.cuda(Config.device)".format(channel))
             # else:exec("self.unet{}=model".format(channel))
@@ -28,4 +31,4 @@ class Spleeter(nn.Module):
         # out = [model.forward(zxx) for model in self.models]
         layer = self.__dict__['_modules']['unet'+str(track_i)]
         out = layer.forward(zxx)
-        return self.sigmoid(out)
+        return   self.sigmoid(out) if(Config.OUTPUT_MASK) else out

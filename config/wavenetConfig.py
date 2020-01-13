@@ -6,27 +6,36 @@ import datetime
 
 
 class Config:
+    model_name =  "DenseUnet" # "Unet" #"DenseUnet"
+    if(model_name == "DenseUnet"):
+        dense_block = 3
+        dense_bn = 4
+        dense_layers = 4
+        dense_growth_rate = 12
+        drop_rate = 0.2
+    OUTPUT_MASK = False
     test_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/test/"
     train_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/train/"
     background_fname = "background.wav"
     vocal_fname = "vocals.wav"
     epoches = 200
     use_gpu = True
-    learning_rate = 0.0001
+    learning_rate = 0.0003
     accumulation_step = 5
     step_size = 60000
     gamma = 0.8
     sample_rate = 44100
     batch_size = 1
     num_workers = batch_size
-    frame_length = 1
+    frame_length = 2
 
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
     datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
 
     # trail_name = 'phase_spleeter_musdb'
     cur = datetime.datetime.now()
-    trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+'FC-dense_spleeter_'
+    if(OUTPUT_MASK == False):trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name+'_NM_spleeter_'
+    else: trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name+'_spleeter_'
     # Dataset
     #musdb18hq
     musdb_test_pth = datahub_root+"musdb18hq/test/"

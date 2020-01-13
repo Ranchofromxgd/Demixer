@@ -19,8 +19,10 @@ from evaluate.si_sdr_numpy import si_sdr,sdr
 # model_name = "model192000"
 # name="2019_12_25_phase_spleeter_l1_l2_l3_lr0005_bs4_fl1.5_ss6000_8lnu5"
 # model_name = "model99000"
-name = "2020_1_8_phase_spleeter_l1_l2_l3_lr0001_bs1_fl2.5_ss60000_8lnu6mu0.5sig0.2low0hig0.5"
-model_name = "model468000"
+# name = "2020_1_8_phase_spleeter_l1_l2_l3_lr0001_bs1_fl2.5_ss60000_8lnu6mu0.5sig0.2low0hig0.5"
+# model_name = "model468000"
+name = "2020_1_13_DenseUnet_spleeter_l1_l2_l3_lr0001_bs1_fl2_ss60000_8lnu3mu0.5sig0.2low0.49hig0.5"
+model_name = "model12000"
 
 def plot2wav(a,b,fname):
     plt.figure(figsize=(20,4))
@@ -204,7 +206,8 @@ class SpleeterUtil:
                     mask = self.model.forward(ch, input_f)
                     # if(ch == 1):
                     #     mask = self.posterior_handling(mask)
-                    data = mask * input_f
+                    if(Config.OUTPUT_MASK):data = mask  * input_f
+                    else:data = mask
                     out.append(data.squeeze(0)*scale)
                     # mask = mask.cpu().numpy()[0,:,:,:]
                     # if (mask_all[ch] is None):
@@ -268,8 +271,8 @@ if __name__ == "__main__":
     #         use_gpu=True)
     path = Config.project_root+"saved_models/"+name+"/"+model_name+".pkl"
     su = SpleeterUtil(model_pth = path)
-    # su.evaluate(save_wav=True)
-    su.Split_listener(fname="西原健一郎_-_Serendipity_vocal.wav")
+    su.evaluate(save_wav=True)
+    # su.Split_listener(fname="西原健一郎_-_Serendipity_vocal.wav")
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])
     # vocal_min_length = min(vocal.shape[0], origin_vocal.shape[0])
