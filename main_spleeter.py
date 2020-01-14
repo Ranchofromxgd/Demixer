@@ -157,7 +157,7 @@ if(not Config.start_point == 0):
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
-every_n = 10
+every_n = 100
 t0 = time.time()
 for epoch in range(Config.epoches):
     print("EPOCH: ", epoch)
