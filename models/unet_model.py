@@ -202,4 +202,5 @@ def get_parameter_number(net):
 
 if __name__ == "__main__":
     model = UNet(n_channels=2, n_classes=2)
+    print(model)
     print(get_parameter_number(model))

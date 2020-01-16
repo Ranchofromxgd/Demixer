@@ -4,97 +4,27 @@ import os
 
 import datetime
 class Config:
-    model_name =  "DenseUnet" # "Unet" #"DenseUnet"
-    if(model_name == "DenseUnet"):
-        dense_block = 3
+    # Project configurations
+    project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
+    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
+
+
+    # Model configurations
+    model_name =  "Demixer" # "Unet" #"Demixer"
+    if(model_name == "Demixer"):
+        block = "DNN"
+        dense_block = 2
         dense_bn = 4
         dense_layers = 4
-        dense_growth_rate = 10
+        dense_growth_rate = 12
         drop_rate = 0.2
-        model_name_alias = model_name+"_"+str(dense_block)+\
+        model_name_alias = model_name+"_"+block+"_"+str(dense_block)+\
                       "_"+str(dense_bn)+\
                       "_"+str(dense_layers)+\
                       "_"+str(dense_growth_rate)+\
                       "_"+str(drop_rate)+"_"
-
-    OUTPUT_MASK = True
-    test_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/test/"
-    train_path = "/home/work_nfs3/yhfu/dataset/musdb18hq/train/"
-    background_fname = "background.wav"
-    vocal_fname = "vocals.wav"
-    epoches = 200
-    use_gpu = True
-    learning_rate = 0.0003
-    accumulation_step = 5
-    step_size = 60000
-    gamma = 0.8
-    sample_rate = 44100
-    batch_size = 1
-    num_workers = batch_size
-    frame_length = 2
-
-    project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
-    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
-
-    # trail_name = 'phase_spleeter_musdb'
-    cur = datetime.datetime.now()
-    if(OUTPUT_MASK == False):trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'_NM_spleeter_'
-    else: trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'_spleeter_'
-    # Dataset
-    #musdb18hq
-    musdb_test_pth = datahub_root+"musdb18hq/test/"
-    musdb_train_pth = datahub_root+"musdb18hq/train/"
-
-    musdb_train_vocal =  datahub_root + "datahub/musdb_train_vocal.txt"
-    musdb_train_background = datahub_root + "datahub/musdb_train_backtrack.txt"
-    musdb_test_vocal = datahub_root +"datahub/musdb_test_vocal.txt"
-    musdb_test_background = datahub_root +"datahub/musdb_test_backtrack.txt"
-
-    # musdb: 100
-    vocal_data = [
-        musdb_train_vocal,
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/干声（纯人声系）.txt",
-        datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
-        datahub_root + "datahub/[Rap清唱]感受最真实的声音.txt",
-        datahub_root + "datahub/贺国丰（清唱陕北民歌）.txt",
-    ]
-
-    vocal_data += [datahub_root + "datahub/song_vocal_data_44_1.txt"]*3
-    vocal_data += [musdb_train_vocal]*3
-
-    background_data = [
-        musdb_train_background,
-        datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
-        datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
-        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
-        datahub_root + "datahub/pure_music_7.txt",
-        datahub_root + "datahub/pure_music_1.txt",
-        datahub_root + "datahub/pure_music_9.txt",
-        datahub_root + "datahub/pure_music_8.txt",
-        datahub_root + "datahub/Artpop(Intrumental).txt",
-        datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
-        datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
-    ]
-    background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
-    background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]
-    background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
-    background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
-
-    mu = 0.5
-    sigma = 0.2
-    alpha_low = 0.49
-    alpha_high = 0.5
-
-    device = torch.device("cuda:0" if use_gpu else "cpu")
-
-    # config for stft and istft
-    stft_frame_shift = 8
-    stft_frame_length = 32
-
+    else:
+        model_name_alias = "_unet_spleeter_"
     # Reload pre-trained model
     start_point = 0
     # model
@@ -121,7 +51,88 @@ class Config:
                       #  'l8',
                       ]
     channels = 2
+    OUTPUT_MASK = True
+    background_fname = "background.wav"
+    vocal_fname = "vocals.wav"
+    epoches = 200
+    use_gpu = True
+    learning_rate = 0.0003
+    accumulation_step = 5
+    step_size = 60000
+    gamma = 0.8
+    sample_rate = 44100
+    batch_size = 1
+    num_workers = batch_size
+    frame_length = 2
+    device = torch.device("cuda:1" if use_gpu else "cpu")
 
+    # Dataset
+    ## musdb18hq
+    musdb_test_pth = datahub_root+"musdb18hq/test/"
+    musdb_train_pth = datahub_root+"musdb18hq/train/"
+    musdb_train_vocal =  datahub_root + "datahub/musdb_train_vocal.txt"
+    musdb_train_background = datahub_root + "datahub/musdb_train_backtrack.txt"
+    musdb_test_vocal = datahub_root +"datahub/musdb_test_vocal.txt"
+    musdb_test_background = datahub_root +"datahub/musdb_test_backtrack.txt"
+
+    ## Config data path
+    ### vocal data
+    vocal_data = [
+        musdb_train_vocal,
+        # datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
+        # datahub_root + "datahub/k_pop.txt", # 44
+        # datahub_root + "datahub/干声（纯人声系）.txt",
+        # datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
+        # datahub_root + "datahub/[Rap清唱]感受最真实的声音.txt",
+        # datahub_root + "datahub/贺国丰（清唱陕北民歌）.txt",
+    ]
+    # vocal_data += [datahub_root + "datahub/song_vocal_data_44_1.txt"]*3
+    # vocal_data += [musdb_train_vocal]*3
+
+    ### background data
+    background_data = [
+        musdb_train_background,
+        # datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
+        # datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
+        # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
+        # datahub_root + "datahub/pure_music_7.txt",
+        # datahub_root + "datahub/pure_music_1.txt",
+        # datahub_root + "datahub/pure_music_9.txt",
+        # datahub_root + "datahub/pure_music_8.txt",
+        # datahub_root + "datahub/Artpop(Intrumental).txt",
+        # datahub_root + "datahub/纯伴奏byLHH.txt",
+        # datahub_root + "datahub/纯伴奏byLHH.txt",
+        # datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
+        # datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
+    ]
+    # background_data += [datahub_root + "datahub/Avril Lavigne Instrumental Version.txt"]*2
+    # background_data += [datahub_root + "datahub/Eminem歌曲纯伴奏单.txt"]
+    # background_data += [datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt"]
+    # background_data += [datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt"]*3
+
+    # Config for energy variance
+    mu = 0.5
+    sigma = 0.2
+    alpha_low = 0
+    alpha_high = 0.5
+
+    # Config for stft and istft
+    stft_frame_shift = 8
+    stft_frame_length = 32
+
+    # Build trail name
+    cur = datetime.datetime.now()
+    if(OUTPUT_MASK == False):trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'_NM_spleeter_'
+    else: trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'spleeter_'+"sf"+str(start_point)+"_"
+    counter = 1
+    for each in os.listdir(project_root+"saved_models"):
+        t = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)
+        if(t in each):
+            for dirName in os.listdir(project_root+"saved_models/"+each):
+                if("model" in dirName):
+                    counter+= 1
+                    break
+    trail_name = str(counter)+"_"+trail_name
     for each in loss_component:
         trail_name += each+"_"
     trail_name.strip("_")
@@ -131,9 +142,6 @@ class Config:
                 +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
                 +"lnu"+str(layer_numbers_unet)\
                 +"mu"+str(mu)+"sig"+str(sigma)+"low"+str(alpha_low)+"hig"+str(alpha_high)
-    temp = []
-
-
 
 if __name__ == "__main__":
     print(Config.trail_name)

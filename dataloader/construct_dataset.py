@@ -14,7 +14,6 @@ datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
 musdb_test_pth = datahub_root+"musdb18hq/test/"
 musdb_train_pth = datahub_root+"musdb18hq/train/"
 
-
 def analysis_cache():
     fname = Config.project_root+"dataloader/wavenet/temp"
     with open(fname,'r') as f:
@@ -270,6 +269,24 @@ def spleet_musdb():
         os.system("spleeter separate -i "+train_dir+"combined.wav"+" -p spleeter:2stems -o "
                   +output_train_pth+each+"/"+"output")
 
+def netease_filter(root_path:str,save_path:str):
+    if(root_path[-1]!='/'):
+        raise ValueError("Error: Path should end with /")
+    list_names = os.listdir(root_path)
+    for each in list_names:
+        list_path = root_path+each+"/"
+        save_list_path = save_path+each+"/"
+        txt_path = Config.datahub_root+"datahub/" + each + ".txt"
+        if (not os.path.exists(list_path)):
+            continue
+        if (not os.path.exists(save_list_path)):
+            trans_mp3_folder_to_wav(list_path,save_list_path)
+        delete_unproper_training_data(save_list_path)
+        list_and_save_folder(save_list_path,txt_path)
+        print(each,"Time statistic")
+        get_total_time_in_txt(txt_path)
+        # print("Done!")
+        print("")
 
 def spleet_pth(input_pth):
     output_pth = Config.datahub_root+"musdb18hq/spleeter_out/netease/"

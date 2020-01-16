@@ -127,12 +127,12 @@ def train( # Frequency domain
                 temp3 = loss(output_vocal,target_vocal)/Config.accumulation_step
                 lossVal += temp3
                 freq_loss_cache.append(freq_loss+float(temp3)*Config.accumulation_step)
-            # if('l4' in Config.loss_component):
-            #     val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
-            #     lossVal = val
-            # if('l5' in Config.loss_component):
-            #     val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
-            #     lossVal += val
+            if('l4' in Config.loss_component):
+                val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
+                lossVal = val
+            if('l5' in Config.loss_component):
+                val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
+                lossVal += val
             if('l6' in Config.loss_component):
                 temp6 = L1loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
                 lossVal += temp6
@@ -157,7 +157,7 @@ if(not Config.start_point == 0):
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
-every_n = 100
+every_n = 10
 t0 = time.time()
 for epoch in range(Config.epoches):
     print("EPOCH: ", epoch)
