@@ -305,11 +305,10 @@ def unify(source,target):
     return (source*target_max).astype(np.int16),target
 
 def eval_spleeter():
+    from evaluate.sdr import sdr_evaluate
     wh = WaveHandler()
     from evaluate.si_sdr_numpy import sdr,si_sdr
     output_test_pth = Config.datahub_root+"musdb18hq/spleeter_out/test/"
-    output_train_pth = Config.datahub_root+"musdb18hq/spleeter_out/train/"
-    mus_train_pth = Config.datahub_root+"musdb18hq/train/"
     mus_test_pth= Config.datahub_root+"musdb18hq/test/"
 
     vocal = []
@@ -380,11 +379,13 @@ def nus_smc_corpus():
     write_list(song_dir,Config.datahub_root+"datahub/nus_smc_corpus_48.txt")
 
 
+
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
-netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
-report_data()
-
+#
+# netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
+# report_data()
+eval_spleeter()
 
 
 

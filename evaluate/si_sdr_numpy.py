@@ -51,8 +51,8 @@ def pow_np_norm(signal):
     return np.square(np.linalg.norm(signal, ord=2))
 
 def si_sdr(estimated, original):
-    estimated = remove_dc(estimated.astype(np.float64))
-    original = remove_dc(original.astype(np.float64))
+    # estimated = remove_dc(estimated.astype(np.float64))
+    # original = remove_dc(original.astype(np.float64))
     estimated,original = estimated.astype(np.float64),original.astype(np.float64)
     target = pow_norm(estimated, original) * original / pow_np_norm(original)
     noise = estimated - target
@@ -86,7 +86,7 @@ def permute_si_sdr_single(e1, c1):
     return sdr1
 
 if __name__ == "__main__":
-    input1 = np.random.randint(0,60000,size=(100,))
-    input2 = input1 + np.random.randint(0,6000,size=(100,))
-    input3 = np.random.randint(0,60000,size=(100,))
+    input1 = np.linspace(0,1000,1000)
+    input2 = np.linspace(1000,0,1000)
+    # input2 = np.random.randn((2000))*2000
     print(si_sdr(input2,input1))

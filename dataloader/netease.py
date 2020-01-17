@@ -24,10 +24,11 @@ pure_vocal_to_do = [
     # "https://music.163.com/#/playlist?id=608623860",
     # "https://music.163.com/#/playlist?id=85487211",
     # "https://music.163.com/#/playlist?id=430660988",
-    "https://music.163.com/#/playlist?id=158725481",
-    "https://music.163.com/#/playlist?id=771535658",
-    "https://music.163.com/#/playlist?id=161474530",
-    "https://music.163.com/#/playlist?id=2422694017"
+    # "https://music.163.com/#/playlist?id=158725481",
+    # "https://music.163.com/#/playlist?id=771535658",
+    # "https://music.163.com/#/playlist?id=161474530",
+    # "https://music.163.com/#/playlist?id=2422694017"
+
 ]
 
 
@@ -40,31 +41,40 @@ background_to_do = [
     # "https://music.163.com/#/playlist?id=2997764076", #lady gaga
     # "https://music.163.com/#/playlist?id=96446995",
     # "https://music.163.com/#/playlist?id=3074099553"
-    "https://music.163.com/#/playlist?id=383075247", #交响乐 电影背景音乐 841
-    "https://music.163.com/#/playlist?id=460326234", # 风华国乐-传统器乐&国风电子
-    "https://music.163.com/#/playlist?id=90401069", # 器乐爵士 ‖ 午夜小酒馆里的醉人音调
-    "https://music.163.com/#/playlist?id=39694263", # 纯音乐|鼓点节奏 •器乐 •电音 |BGM
-    "https://music.163.com/#/playlist?id=2491655154",# 西洋器乐曲—大号 39
-    "https://music.163.com/#/playlist?id=7163705", # 弦中呐喊 纯器乐精选 36
-    "https://music.163.com/#/playlist?id=116214280", # 【器乐】架子鼓 25
-    "https://music.163.com/#/playlist?id=2036778465" # 架子鼓 对耳朵的享受 124
-    "https://music.163.com/#/playlist?id=431256642" , # 贝斯独奏 不一样的感觉
-    "https://music.163.com/#/playlist?id=523210850",# 牛逼到炸裂的电吉他独奏神曲
-    "https://music.163.com/#/playlist?id=2497426288", # 吉他独奏（流行·影视金曲集选）
-    "https://music.163.com/#/playlist?id=108012586", # 莫扎特钢琴独奏作品
-    "https://music.163.com/#/playlist?id=387359964", # 东方钢琴独奏~黑白键下的梦与历史~
-    "https://music.163.com/#/playlist?id=2698239642", # 吉他独奏（纯音乐）
-    "https://music.163.com/#/playlist?id=1986062420", # 单簧管独奏曲收藏
-    "https://music.163.com/#/playlist?id=422785916", # 纳卡里亚科夫 小号独奏
-    "https://music.163.com/#/playlist?id=691124760", # 旋律型吉他独奏（solo）
-    "https://music.163.com/#/playlist?id=2718633718", # 琵琶独奏
-    "https://music.163.com/#/playlist?id=2300144261", # 俄罗斯手风琴独奏
-    "https://music.163.com/#/playlist?id=517402175", # 柴可夫斯基钢琴独奏作品全集
-    "https://music.163.com/#/playlist?id=61311676", # 黑白琴键的独奏
-    "https://music.163.com/#/playlist?id=602664262", # 李斯特钢琴独奏曲60卷合集之（25-46卷）
-    "https://music.163.com/#/playlist?id=34280073", # 各种乐器独奏协奏
-    "https://music.163.com/#/playlist?id=2385707999", # 纯音乐/电音可下载(2020/1/10)
-    "https://music.163.com/#/playlist?id=2491616279", # 猫和老鼠背景音乐交响乐
+    # "https://music.163.com/#/playlist?id=383075247", #交响乐 电影背景音乐 841
+    # "https://music.163.com/#/playlist?id=460326234", # 风华国乐-传统器乐&国风电子
+    # "https://music.163.com/#/playlist?id=90401069", # 器乐爵士 ‖ 午夜小酒馆里的醉人音调
+    # "https://music.163.com/#/playlist?id=39694263", # 纯音乐|鼓点节奏 •器乐 •电音 |BGM
+    # "https://music.163.com/#/playlist?id=2491655154",# 西洋器乐曲—大号 39
+    # "https://music.163.com/#/playlist?id=7163705", # 弦中呐喊 纯器乐精选 36
+    # "https://music.163.com/#/playlist?id=116214280", # 【器乐】架子鼓 25
+    # "https://music.163.com/#/playlist?id=2036778465" # 架子鼓 对耳朵的享受 124
+    # "https://music.163.com/#/playlist?id=523210850",# 牛逼到炸裂的电吉他独奏神曲
+    # "https://music.163.com/#/playlist?id=2497426288", # 吉他独奏（流行·影视金曲集选）
+    # "https://music.163.com/#/playlist?id=108012586", # 莫扎特钢琴独奏作品
+    # "https://music.163.com/#/playlist?id=387359964", # 东方钢琴独奏~黑白键下的梦与历史~
+    # "https://music.163.com/#/playlist?id=2698239642", # 吉他独奏（纯音乐）
+    # "https://music.163.com/#/playlist?id=1986062420", # 单簧管独奏曲收藏
+    # "https://music.163.com/#/playlist?id=422785916", # 纳卡里亚科夫 小号独奏
+    # "https://music.163.com/#/playlist?id=691124760", # 旋律型吉他独奏（solo）
+    # "https://music.163.com/#/playlist?id=2718633718", # 琵琶独奏
+    # "https://music.163.com/#/playlist?id=2300144261", # 俄罗斯手风琴独奏
+    # "https://music.163.com/#/playlist?id=517402175", # 柴可夫斯基钢琴独奏作品全集
+    # "https://music.163.com/#/playlist?id=61311676", # 黑白琴键的独奏
+    # "https://music.163.com/#/playlist?id=602664262", # 李斯特钢琴独奏曲60卷合集之（25-46卷）
+    # "https://music.163.com/#/playlist?id=34280073", # 各种乐器独奏协奏
+    # "https://music.163.com/#/playlist?id=2385707999", # 纯音乐/电音可下载(2020/1/10)
+    # "https://music.163.com/#/playlist?id=2491616279", # 猫和老鼠背景音乐交响乐
+    # "https://music.163.com/#/playlist?id=107521400", # 爵士鼓王 西蒙·菲利浦
+    # "https://music.163.com/#/playlist?id=889970431", # 西非:非洲鼓(打击乐)
+    # "https://music.163.com/#/playlist?id=940178162", # 奥斯卡电影交响乐
+    # "https://music.163.com/#/playlist?id=83775580", # 德国著名黑管演奏家雨果.斯特拉瑟
+    # "https://music.163.com/#/playlist?id=997713833", # 【爵士-黑管-单簧管】
+    # "https://music.163.com/#/playlist?id=146315968", # 一入电音深似海 | 纯音乐电音
+    # "https://music.163.com/#/playlist?id=747879816", # 『电音』动感纯音乐 节奏感强（建议随机
+    # "https://music.163.com/#/playlist?id=23925912", # 吹奏乐1000首
+    # "https://music.163.com/#/playlist?id=2078687992", # 纯音乐·西洋乐器 time_official!!
+    "",
 ]
 
 
@@ -98,7 +108,6 @@ class NeteaseDownloader(threading.Thread):
         self.url_text = url
         self.musicData = []
         self.musicData = self.getMusicData(self.url_text.replace("#/", ""))
-        print(self.musicData)
         if len(self.musicData) > 1:
             self.start()
 
@@ -109,7 +118,7 @@ class NeteaseDownloader(threading.Thread):
         for x in values:
             x['name'] = re.sub(rstr, "_", x['name'])
             if not os.path.exists(save_root + self.list_name+"/"+ x['name'] + '.mp3'):
-                print('***** ' + x['name'] + '.mp3 ***** Downloading...\n')
+                print('***** ' + x['name'] + '.mp3 ***** Downloading...')
 
                 url = 'http://music.163.com/song/media/outer/url?id=' + x['id'] + '.mp3'
                 try:
@@ -118,7 +127,7 @@ class NeteaseDownloader(threading.Thread):
                     downNum = downNum + 1
                 except:
                     x = x - 1
-                    print(u'Download wrong~\n')
+                    print(u'Download wrong~')
         print('Download complete ' + str(downNum) + ' files !\n')
 
     def getMusicData(self, url):
@@ -146,7 +155,12 @@ class NeteaseDownloader(threading.Thread):
             f.write(response.content)
             f.flush()
 
+
+
 if __name__ == '__main__':
     for each in background_to_do:
         frame = NeteaseDownloader(1, "Thread-1", 1)
-        frame.download(each)
+        try:
+            frame.download(each)
+        except:
+            print("Fail to download:" ,each)

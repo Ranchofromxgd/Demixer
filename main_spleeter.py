@@ -8,7 +8,11 @@ from evaluate.si_sdr_torch import si_sdr
 import torch
 import os
 import time
+import pynvml
 from util.spleeter_util import SpleeterUtil
+
+pynvml.nvmlInit()
+handle = pynvml.nvmlDeviceGetHandleByIndex(int(Config.device_str.split(":")[-1]))
 
 
 def write_list(l,fname):
@@ -63,16 +67,14 @@ def save_and_evaluation():
     print("Save model")
     torch.save(model, "./saved_models/" + Config.trail_name + "/model" + str(model.cnt) + ".pkl")
     print("Start evaluation...")
-    model.eval()
     su = SpleeterUtil(model_pth=model)
-    sdr_background, sdr_vocal = su.evaluate(save_wav=True, save_json=False)
+    sdr_background, sdr_vocal = su.evaluate(save_wav=False, save_json=False)
     su.Split_listener()
     sdr_background_cache.append(sdr_background)
     sdr_vocal_cache.append(sdr_vocal)
     print("REFERENCE FOR EARILY STOPPING:")
-    print("sdr_vocal", sdr_vocal_cache)
-    print("sdr_background", sdr_background_cache)
-    model.train()
+    print("sisdr_vocal", sdr_vocal_cache)
+    print("sisdr_background", sdr_background_cache)
     del su
 
 def train( # Frequency domain
@@ -153,11 +155,12 @@ def train( # Frequency domain
                 optimizer.zero_grad()
 
 if(not Config.start_point == 0):
-    model = torch.load(Config.project_root+"saved_models/"+Config.trail_name+"/model"+str(Config.start_point)+".pkl",
+    model = torch.load(Config.load_model_path+"/model"+str(Config.start_point)+".pkl",
                                map_location=Config.device)
     print("Start from ",model.cnt)
 
-every_n = 10
+every_n = 100
+
 t0 = time.time()
 for epoch in range(Config.epoches):
     print("EPOCH: ", epoch)
@@ -167,12 +170,15 @@ for epoch in range(Config.epoches):
     while(background is not None):
         if (model.cnt % every_n == 0 and model.cnt != Config.start_point):#and model.cnt != Config.start_point
             t1 = time.time()
-            print(str(model.cnt)+" - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
-                  "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
+            meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            print(str(model.cnt)+
+                  # " - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
+                  # "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
                   "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
                   "\tlr:",optimizer.param_groups[0]['lr'],
-                  "\tspeed:",(every_n*Config.frame_length*Config.batch_size)/(t1-t0))
+                  "\tspeed:",(every_n*Config.frame_length*Config.batch_size)/(t1-t0),
+                  "\tGPU:",meminfo.used/(1024*1024),"MB")
             wav_loss_cache = []
             freq_loss_cache = []
             wav_cons_loss_cache = []
