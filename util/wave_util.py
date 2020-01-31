@@ -12,24 +12,24 @@ class WavObj:
         self.fname =fname
         self.content = content
 
-class FixLengthDictionary:
-    def __init__(self,maxlength = 10):
-        self.content = {}
-        self.maxlength = maxlength
-
-    def put(self,wavobj):
-        if(len(list(self.content.keys())) >= self.maxlength):
-            self.content.pop(list(self.content.keys())[0])
-        self.content[wavobj.fname] = wavobj.content
-
-    def get(self,fname):
-        if(fname in list(self.content.keys())):
-            return self.content[fname]
-        return np.empty([])
+# class FixLengthDictionary:
+#     def __init__(self,maxlength = 10):
+#         self.content = {}
+#         self.maxlength = maxlength
+#
+#     def put(self,wavobj):
+#         if(len(list(self.content.keys())) >= self.maxlength):
+#             self.content.pop(list(self.content.keys())[0])
+#         self.content[wavobj.fname] = wavobj.content
+#
+#     def get(self,fname):
+#         if(fname in list(self.content.keys())):
+#             return self.content[fname]
+#         return np.empty([])
 
 class WaveHandler:
     def __init__(self):
-        self.wav_cache = FixLengthDictionary(maxlength=20)
+        # self.wav_cache = FixLengthDictionary(maxlength=20)
         self.read_times = 0
         self.hit_times = 0
     def save_wave(self, frames, fname, bit_width=2, channels=1, sample_rate=44100):
@@ -63,7 +63,6 @@ class WaveHandler:
             if (show == True):
                 print(start, end)
                 print(frames.shape)
-
         else:
             f.setpos(portion_start)
             raw = f.readframes(portion_end-portion_start)

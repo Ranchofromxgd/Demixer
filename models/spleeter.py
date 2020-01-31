@@ -31,4 +31,4 @@ class Spleeter(nn.Module):
         # out = [model.forward(zxx) for model in self.models]
         layer = self.__dict__['_modules']['unet'+str(track_i)]
         out = layer.forward(zxx)
-        return   self.sigmoid(out) if(Config.OUTPUT_MASK) else out
+        return  self.sigmoid(out) if(Config.OUTPUT_MASK) else out

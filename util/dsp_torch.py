@@ -122,8 +122,8 @@ def seperate_magnitude(magnitude,phase):
 
 def stft(signal,
          sample_rate,
-         frame_length=32,
-         frame_shift=8,
+         frame_length=Config.stft_frame_length,
+         frame_shift=Config.stft_frame_shift,
          window_type="hanning",
          use_gpu = False,
          preemphasis=0.0,
@@ -340,4 +340,4 @@ def torch_istft(stft_matrix,          # type: Tensor
     return y
 
 if __name__ == "__main__":
-    pass
+    import torch

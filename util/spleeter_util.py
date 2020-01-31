@@ -12,6 +12,11 @@ from util import wave_util
 from util.dsp_torch import stft, istft
 from util.wave_util import  write_json
 from evaluate.si_sdr_numpy import si_sdr
+from util.vad import VoiceActivityDetector
+from scipy import signal
+
+vocal_b, vocal_a = signal.butter(8, 2*11000/44100, 'lowpass')
+back_b, back_a = signal.butter(8, 2*17000/44100, 'lowpass')
 
 
 def plot2wav(a, b, fname):
@@ -51,25 +56,35 @@ class SpleeterUtil:
         self.wh = wave_util.WaveHandler()
 
         # We use this segment to avoid STFT's loss of sample points
-        self.tiny_segment = 1
+        self.tiny_segment = 10
 
         # This is for better precision in float!
         self.start = []
         self.end = []
         self.realend = []
-        for each in np.linspace(0, 980, 50):
-            self.start.append(each / 1000)
-            self.end.append((each + 20 + self.tiny_segment) / 1000)
-            self.realend.append((each + 20) / 1000)
-        # for each in np.linspace(0,950,20):
-        #     self.start.append(each/1000)
-        #     self.end.append((each+50+self.tiny_segment)/1000)
-        #     self.realend.append((each+50)/1000)
+        # for each in np.linspace(0, 980, 50):
+        #     self.start.append(each / 1000)
+        #     self.end.append((each + 20 + self.tiny_segment) / 1000)
+        #     self.realend.append((each + 20) / 1000)
+        # for each in np.linspace(0, 900, 10):
+        #     self.start.append(each / 1000)
+        #     self.end.append((each + 100 + self.tiny_segment) / 1000)
+        #     self.realend.append((each + 100) / 1000)
+        for each in np.linspace(0,950,20):
+            self.start.append(each/1000)
+            self.end.append((each+50+self.tiny_segment)/1000)
+            self.realend.append((each+50)/1000)
 
-    def activation(self, x):
-        return 1. / (1 + torch.exp(-100 * (x - 0.1)))
+    def activation(self,x):
+        return 1. / (1 + torch.exp(-15 * (x - 0.35)))
+        # x[x > 0.1] = 1
+        # x[x < 0.1] = 0
+        # return x
 
-    def posterior_handling(self, mask, smooth_length=2, freq_bin_portion=0.25):
+    def is_restrained(self,x):
+        return torch.abs(x) < 0.45
+
+    def posterior_handling(self,mask, smooth_length=4, freq_bin_portion=0.25,min_gap = 1400):
         mask = mask.squeeze(0)
         freq_bin = mask.shape[0]
         mask_bak = mask.clone()
@@ -79,20 +94,48 @@ class SpleeterUtil:
         for i in range(mask.shape[0]):
             mask[i] = torch.sum(mask[i - int(smooth_length / 2):i + int(smooth_length / 2)]) / smooth_length
         mask = self.activation(mask)
+        vstart, vend = None, None
+        mstart, mend = None, None
+        is_vocal = True
+        not_music = False
+        for i in range(mask.shape[0]):
+            if (self.is_restrained(mask[i]) and is_vocal == True):
+                is_vocal = False
+                vstart = i
+                continue
+            elif (not self.is_restrained(mask[i]) and is_vocal == False):
+                is_vocal = True
+                vend = i
+                if (abs(vend - vstart) < min_gap):
+                    mask[vstart:vend] = torch.ones(vend - vstart)
+        for i in range(mask.shape[0]):
+            if (not self.is_restrained(mask[i]) and not_music == False):
+                not_music = True
+                mstart = i
+                continue
+            elif (self.is_restrained(mask[i]) and not_music == True):
+                not_music = False
+                mend = i
+                if (abs(mend - mstart) < min_gap):
+                    # try:
+                    #     mask[mstart+800:mend] = torch.zeros(mend - (mstart+800))
+                    # except:
+                    #     continue
+                    pass
         for i in range(mask.shape[0]):
             mask_bak[:, i, :] *= mask[i]
-        return mask_bak.unsqueeze(0)
+        return mask_bak.unsqueeze(0),mask
 
     def evaluate(self, save_wav=True, save_json=True):
-
         performance = {}
-        pth = os.listdir(self.test_pth)  # +os.listdir(Config.musdb_train_pth)
+        dir_pth = self.test_pth
+        pth = os.listdir(dir_pth) # + os.listdir(self.test_pth)
         pth.sort()
         for each in pth: # TODO
             print("evaluating: ", each, end="  ")
             performance[each] = {}
-            background_fpath = self.test_pth + each + "/" + Config.background_fname
-            vocal_fpath = self.test_pth + each + "/" + Config.vocal_fname
+            background_fpath = dir_pth + each + "/" + Config.background_fname
+            vocal_fpath = dir_pth + each + "/" + Config.vocal_fname
             background, vocal, origin_background, origin_vocals = self.split(background_fpath,
                                                                              vocal_fpath,
                                                                              save=False,
@@ -110,10 +153,12 @@ class SpleeterUtil:
                         self.start_point) + "/")
                     os.mkdir(
                         Config.project_root + "outputs/musdb_test/" + self.model_name + str(self.start_point) + "/")
+                background = signal.filtfilt(back_b, back_a, background)
                 self.wh.save_wave((background[:background_min_length]).astype(np.int16),
                                   Config.project_root + "outputs/musdb_test/" + self.model_name + str(
                                       self.start_point) + "/background_" + each + ".wav",
                                   channels=1)
+                vocal = signal.filtfilt(vocal_b, vocal_a, vocal)
                 self.wh.save_wave((vocal[:vocal_min_length]).astype(np.int16),
                                   Config.project_root + "outputs/musdb_test/" + self.model_name + str(
                                       self.start_point) + "/vocal_" + each + ".wav",
@@ -147,9 +192,6 @@ class SpleeterUtil:
               save_path=Config.project_root,
               scale=1.0
               ):
-        import pynvml
-        pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(int(Config.device_str.split(":")[-1]))
         if (save_path[-1] != '/'):
             raise ValueError("Error: path should end with /")
         background = np.empty(0)
@@ -160,10 +202,11 @@ class SpleeterUtil:
         else:
             origin_background = self.wh.read_wave(fname=background_fpath, sample_rate=Config.sample_rate)
         start = time.time()
-        if(not os.path.exists(save_path + "background_"+fname+".wav") and not os.path.exists(save_path + "vocal_"+fname+".wav")):
+        if(not os.path.exists(save_path + "background_"+fname+".wav") or not os.path.exists(save_path + "vocal_"+fname+".wav")):
             print("Not found: ",save_path + "background_"+fname+".wav",save_path + "vocal_"+fname+".wav")
             with torch.no_grad():
                 # mask_all = [None]*self.model.channels
+                switch_all = None
                 for i in range(len(self.start)):
                     portion_start, portion_end, real_end = self.start[i], self.end[i], self.realend[i]
                     input_t_background = self.wh.read_wave(fname=background_fpath,
@@ -198,28 +241,28 @@ class SpleeterUtil:
                                        use_gpu=True).unsqueeze(0)
                     out = []
                     # Forward and mask
+                    self.model.eval()
                     for ch in range(self.model.channels):
-                        meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                        print("Before forward",meminfo.used / (1024 * 1024), "MB")
-                        self.model.eval()
+
                         mask = self.model.forward(ch, input_f)
-                        self.model.train()
-                        meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                        print("After forward",meminfo.used / (1024 * 1024), "MB")
-                        # if(ch == 1):
-                        #     mask = self.posterior_handling(mask)
+
+                        # If vocal, add posterior handling
+                        if(ch == 1):
+                            mask,switch = self.posterior_handling(mask)
+                        #     # Visualize switch
+                        #     switch = switch.cpu().detach().numpy()
+                        #     if (switch_all is None):
+                        #         switch_all = switch
+                        #     else:
+                        #         switch_all = np.append(switch_all, switch)
+
                         if (Config.OUTPUT_MASK):
                             data = mask * input_f
                         else:
                             data = mask
                         out.append(data.squeeze(0) * scale)
-                        # mask = mask.cpu().numpy()[0,:,:,:]
-                        # if (mask_all[ch] is None):
-                        #     # mask_all[ch] = mask
-                        #     mask_all[ch] = []
-                        # else:
-                        #     # mask_all[ch] = np.concatenate((mask_all[ch], mask), axis=1)
-                        #     mask_all.append(np.sum(mask))
+                    self.model.train()
+
                     # Inverse STFT
                     for count, each in enumerate(out):
                         if (count == 0):
@@ -239,15 +282,29 @@ class SpleeterUtil:
                         construct_vocal = construct_vocal[:real_length]
                     background = np.append(background, construct_background)
                     vocal = np.append(vocal, construct_vocal)
+                    smooth = 6
+                    scope = 20
+                    if(not abs(background.shape[0]-real_length)<10):
+                        for i in range(-scope,scope):
+                            probe = -real_length+i
+                            background[probe] = sum(background[probe-int(smooth/2):probe+int(smooth/2)])/smooth
+                            vocal[probe] = sum(vocal[probe-int(smooth/2):probe+int(smooth/2)])/smooth
+                # vad = VoiceActivityDetector(rate=Config.sample_rate,data=vocal,channels=Config.channels)
+                # vocal = vad.select_speech_regions()
         else:
             background = self.wh.read_wave(save_path + "background_"+fname+".wav",channel=1)
             vocal = self.wh.read_wave(save_path +  "vocal_"+fname+".wav",channel=1)
         end = time.time()
         print('time cost', end - start, 's')
+        # plt.figure(figsize=(20,4))
+        # plt.plot(switch_all)
+        # plt.savefig(save_path + "vocal_"+fname+".png")
         # save_pickle(mask_all, "mask_curve.pkl")
         if (save == True):
-            self.wh.save_wave((background).astype(np.int16), save_path + fname + "_background.wav", channels=1)
-            self.wh.save_wave((vocal).astype(np.int16), save_path + fname + "_vocal.wav", channels=1)
+            background = signal.filtfilt(back_b, back_a, background)
+            self.wh.save_wave((background).astype(np.int16), save_path + "background_"+fname+".wav", channels=1)
+            vocal = signal.filtfilt(vocal_b, vocal_a, vocal)  # data为要过滤的信号
+            self.wh.save_wave((vocal).astype(np.int16), save_path +  "vocal_"+fname+".wav", channels=1)
             print("Split work finish!")
         if (not vocal_fpath == None):
             return background, vocal, origin_background, origin_vocal
@@ -278,8 +335,8 @@ if __name__ == "__main__":
     from evaluate.sdr import sdr_evaluate
     path = Config.load_model_path +"/model" + str(Config.start_point) + ".pkl"
     su = SpleeterUtil(model_pth=path)
-    su.evaluate(save_wav=True)
-    # su.Split_listener(fname="西原健一郎_-_Serendipity_vocal.wav")
+    # su.evaluate(save_wav=True)
+    su.Split_listener()
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])
     # vocal_min_length = min(vocal.shape[0], origin_vocal.shape[0])

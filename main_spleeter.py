@@ -22,6 +22,7 @@ def write_list(l,fname):
 
 def L1loss(estimate,target):
     if(estimate.size()!=target.size()):
+        print(estimate.size(),target.size())
         raise ValueError("Error: estimate and the target tensor shape should be asame")
     return torch.sum(torch.abs(target-estimate))/estimate.nelement()
 
@@ -51,9 +52,15 @@ freq_cons_loss_cache = []
 sdr_background_cache, sdr_vocal_cache = [],[]
 
 wh = WaveHandler()
-model = Spleeter(channels=2,unet_inchannels=2,unet_outchannels=2).cuda(Config.device)
-# print(model)
-print(Config.model_name)
+
+if(not Config.start_point == 0):
+    model = torch.load(Config.load_model_path+"/model"+str(Config.start_point)+".pkl",
+                               map_location=Config.device)
+else:
+    model = Spleeter(channels=2, unet_inchannels=2, unet_outchannels=2).cuda(Config.device)
+print(model)
+print("Start from ",model.cnt,Config.model_name)
+
 dl = torch.utils.data.DataLoader(
     dataloader.WavenetDataloader(),
     batch_size=Config.batch_size,
@@ -103,11 +110,7 @@ def train( # Frequency domain
             output_background = output_track[0]
             output_vocal = output_track[1]
             # Reconstruct to Time domain
-            if('l4' in Config.loss_component
-                    or 'l5' in Config.loss_component
-                    or 'l6' in Config.loss_component
-                    or 'l7' in Config.loss_component
-                    or 'l8' in Config.loss_component):
+            if(Config.time_domain_loss):
                 output_t_background = istft(output_background
                                        ,sample_rate=Config.sample_rate
                                        ,use_gpu=True)
@@ -116,7 +119,6 @@ def train( # Frequency domain
                                        ,use_gpu=True)
                 min_length_background = min(output_t_background.size()[1], target_t_background.size()[1])
                 min_length_vocal = min(output_t_vocal.size()[1], target_t_vocal.size()[1])
-                min_length_vocal_background = min(min_length_background, min_length_vocal)
             # Loss function: Energy conservation & mixed spectrom & vocal spectrom & background wave & vocal wave
             if('l1' in Config.loss_component):
                 lossVal = loss(output_track_sum, target_song)/Config.accumulation_step
@@ -129,16 +131,16 @@ def train( # Frequency domain
                 temp3 = loss(output_vocal,target_vocal)/Config.accumulation_step
                 lossVal += temp3
                 freq_loss_cache.append(freq_loss+float(temp3)*Config.accumulation_step)
-            if('l4' in Config.loss_component):
-                val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
-                lossVal = val
-            if('l5' in Config.loss_component):
-                val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
-                lossVal += val
-            if('l6' in Config.loss_component):
-                temp6 = L1loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
-                lossVal += temp6
-                wav_cons_loss_cache.append(float(temp6))
+            # if('l4' in Config.loss_component):
+            #     val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
+            #     lossVal = val
+            # if('l5' in Config.loss_component):
+            #     val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
+            #     lossVal += val
+            # if('l6' in Config.loss_component):
+            #     temp6 = L1loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
+            #     lossVal += temp6
+            #     wav_cons_loss_cache.append(float(temp6))
             if('l7' in Config.loss_component):
                 val7 = L1loss(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
                 lossVal += val7
@@ -154,11 +156,6 @@ def train( # Frequency domain
                 optimizer.step()
                 optimizer.zero_grad()
 
-if(not Config.start_point == 0):
-    model = torch.load(Config.load_model_path+"/model"+str(Config.start_point)+".pkl",
-                               map_location=Config.device)
-    print("Start from ",model.cnt)
-
 every_n = 100
 
 t0 = time.time()
@@ -172,7 +169,7 @@ for epoch in range(Config.epoches):
             t1 = time.time()
             meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
             print(str(model.cnt)+
-                  # " - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
+                  " - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
                   # "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
                   "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
                   "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
@@ -186,8 +183,10 @@ for epoch in range(Config.epoches):
             if (model.cnt % 12000 == 0):
                 save_and_evaluation()
             t0 = time.time()
-        # f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate),stft(vocal.float(),sample_rate=Config.sample_rate),stft(song.float(),sample_rate=Config.sample_rate)
-        f_background, f_vocal, f_song = background, vocal, song
+        if(Config.time_domain_loss):f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate,use_gpu=True),\
+                                                                    stft(vocal.float(),sample_rate=Config.sample_rate,use_gpu=True),\
+                                                                    stft(song.float(),sample_rate=Config.sample_rate,use_gpu=True)
+        else:f_background, f_vocal, f_song = background, vocal, song
         train(target_background=f_background,
               target_vocal=f_vocal, 
               target_song=f_song,

@@ -10,7 +10,7 @@ class Config:
     # Model configurations
     model_name =  "Demixer" # "Unet" #"Demixer"
     if(model_name == "Demixer"):
-        block = "GRU"
+        block = "DNN"
         dense_block = 2
         dense_bn = 4
         dense_layers = 4
@@ -24,8 +24,8 @@ class Config:
     else:
         model_name_alias = "_unet_spleeter_"
     # Reload pre-trained model
-    load_model_path = project_root+"saved_models/2_2020_1_16_Demixer_GRU_2_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0003_bs1_fl3_ss60000_8lnu5mu0.5sig0.2low0.49hig0.5"
-    start_point  = 0
+    load_model_path = project_root+"saved_models/1_2020_1_18_Demixer_DNN_2_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0003_bs1_fl3_ss60000_8lnu5mu0.5sig0.2low0.3hig0.5"
+    start_point  = 468000
     # model
     layer_numbers_unet = 5
     # Loss function
@@ -46,24 +46,32 @@ class Config:
                       # 'l4',
                       #  'l5',
                       # 'l6',
-                      #  'l7',
-                      #  'l8',
+                       'l7',
+                       'l8',
                       ]
+    if ('l4' in loss_component
+            or 'l5' in loss_component
+            or 'l6' in loss_component
+            or 'l7' in loss_component
+            or 'l8' in loss_component):
+        time_domain_loss = True
+    else:
+        time_domain_loss = False
     channels = 2
     OUTPUT_MASK = True
     background_fname = "background.wav"
     vocal_fname = "vocals.wav"
     epoches = 200
     use_gpu = True
-    learning_rate = 0.0003
-    accumulation_step = 6
-    step_size = 60000
+    learning_rate = 0.0005
+    accumulation_step = 100
+    step_size = 120000
     gamma = 0.8
     sample_rate = 44100
     batch_size = 1
     num_workers = batch_size
     frame_length = 3
-    device_str = "cuda:0"
+    device_str = "cuda:1"
     device = torch.device( device_str if use_gpu else "cpu")
 
     # Dataset
@@ -78,6 +86,10 @@ class Config:
     ## Config data path
     ### vocal data
     vocal_data = [
+        musdb_train_vocal,
+        musdb_train_vocal,
+        musdb_train_vocal,
+        musdb_train_vocal,
         musdb_train_vocal,
         musdb_train_vocal,
         musdb_train_vocal,
@@ -111,11 +123,21 @@ class Config:
     ### background data
     background_data = [
         musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
+        musdb_train_background,
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
         datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
         datahub_root + "datahub/pure_music_7.txt",
         datahub_root + "datahub/Artpop(Intrumental).txt",
+        datahub_root + "datahub/纯伴奏byLHH.txt",
         datahub_root + "datahub/纯伴奏byLHH.txt",
         datahub_root + "datahub/纯伴奏byLHH.txt",
         datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
@@ -139,15 +161,18 @@ class Config:
         datahub_root + "datahub/纳卡里亚科夫 小号独奏.txt",
         datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt",
         datahub_root + "datahub/琵琶独奏.txt",
-        datahub_root + "datahub/【器乐】架子鼓.txt",
         datahub_root + "datahub/器乐爵士 ‖ 午夜小酒馆里的醉人音调.txt",
         datahub_root + "datahub/西非:非洲鼓(打击乐).txt",
-        # datahub_root + "datahub/气势恢宏----史诗级交响乐【大片即视感】.txt",
+        datahub_root + "datahub/气势恢宏----史诗级交响乐【大片即视感】.txt",
         datahub_root + "datahub/西洋器乐曲—大号.txt",
         datahub_root + "datahub/弦中呐喊 纯器乐精选.txt",
         datahub_root + "datahub/旋律型吉他独奏（solo）.txt",
         datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
-    ]
+        datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
+    ]+[datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt"]*15\
+    +[datahub_root + "datahub/单簧管独奏曲收藏.txt"]*10\
+    +[datahub_root + "datahub/德国著名黑管演奏家雨果.斯特拉瑟.txt"]*5\
+    +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20
 
     # Config for energy variance
     mu = 0.5

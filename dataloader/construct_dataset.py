@@ -385,13 +385,69 @@ def nus_smc_corpus():
 #
 # netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
 # report_data()
-eval_spleeter()
+# eval_spleeter()
+def activation(x):
+    # return 1. / (1 + torch.exp(-100 * (x - 0.1)))
+    x[x > 0.1] = 1
+    x[x < 0.1] = 0
+    return x
 
+def is_restrained(x):
+    return abs(x)<1e-2
 
+def is_reserved(x):
+    return abs(x-1)<3*1e-2
 
-# mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
-# mask = posterior_handling(torch.Tensor(mask[1]))
+def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
+    mask = mask.squeeze(0)
+    freq_bin = mask.shape[0]
+    mask_bak = mask.clone()
+    mask = mask[:int(freq_bin * freq_bin_portion), :, :]
+    mask = torch.sum(torch.sum(mask, 2), 0)
+    mask /= torch.max(torch.abs(mask))
+    for i in range(mask.shape[0]):
+        mask[i] = torch.sum(mask[i - int(smooth_length / 2):i + int(smooth_length / 2)]) / smooth_length
+    mask = activation(mask)
+    vstart,vend = None,None
+    mstart,mend = None,None
+    is_vocal = True
+    not_music = False
+    for i in range(mask.shape[0]):
+        if(is_restrained(mask[i]) and is_vocal == True):
+            is_vocal = False
+            vstart = i
+            continue
+        elif(not is_restrained(mask[i]) and is_vocal == False):
+            is_vocal = True
+            vend = i
+            if(abs(vend-vstart)<100):
+                mask[vstart:vend] = torch.ones(vend-vstart)
+    for i in range(mask.shape[0]):
+        if(not is_restrained(mask[i]) and not_music == False):
+            not_music = True
+            mstart = i
+            continue
+        elif(is_restrained(mask[i]) and not_music == True):
+            not_music = False
+            mend = i
+            if(abs(mend-mstart)<100):
+                mask[mstart:mend] = torch.zeros(mend-mstart)
+
+    plt.figure(figsize=(20,5))
+    plt.plot(mask.numpy())
+    plt.savefig("mask.png")
+
+mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
+mask = posterior_handling(torch.Tensor(mask[1]))
 
 # plt.figure(figsize=(20,3))
 # plt.imshow(torch.sum(mask,2))
 # plt.savefig("temp.png")
+
+t_vocal,t_back = 0,0
+for each in Config.vocal_data:
+    t_vocal += get_total_time_in_txt(each)
+for each in Config.background_data:
+    t_back += get_total_time_in_txt(each)
+
+print(t_vocal,t_back)

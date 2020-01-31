@@ -115,7 +115,8 @@ class WavenetDataloader(Dataset):
 
         background_crop, vocal_crop = background_crop.astype(np.int16), vocal_crop.astype(np.int16)
         b,v,s = torch.Tensor(background_crop), torch.Tensor(vocal_crop), torch.Tensor(background_crop + vocal_crop)
-        b,v,s = stft(b.float(),Config.sample_rate),stft(v.float(),Config.sample_rate),stft(s.float(),Config.sample_rate)
+        if(not Config.time_domain_loss):
+            b,v,s = stft(b.float(),Config.sample_rate),stft(v.float(),Config.sample_rate),stft(s.float(),Config.sample_rate)
         return b,v,s#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
 
     def __len__(self):
