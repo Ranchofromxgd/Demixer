@@ -18,11 +18,12 @@ class data_prefetcher():
 
     def preload(self):
         try:
-            self.next_background, self.next_vocal,self.next_song = next(self.loader)
+            self.next_background, self.next_vocal,self.next_song,self.next_name = next(self.loader)
         except StopIteration:
             self.next_background = None
             self.next_vocal = None
             self.next_song= None
+            self.next_name= None
             return
         with torch.cuda.stream(self.stream):
             self.next_background = self.next_background.cuda(Config.device,non_blocking=True)
@@ -34,6 +35,7 @@ class data_prefetcher():
         background = self.next_background
         vocal = self.next_vocal
         song = self.next_song
+        name = self.next_name
         if background is not None:
             background.record_stream(torch.cuda.current_stream(Config.device))
         if vocal is not None:
@@ -41,13 +43,15 @@ class data_prefetcher():
         if song is not None:
             song.record_stream(torch.cuda.current_stream(Config.device))
         self.preload()
-        return background, vocal,song
+        if(not Config.MODE_CLEAN_DATA):return background, vocal,song
+        else:return background, vocal,song,name
 
 class WavenetDataloader(Dataset):
     def __init__(self,sample_length = Config.sample_rate*Config.frame_length,
                  num_worker = Config.num_workers,
                  sampleNo=20000,
                  mu = Config.mu,
+                 empty_every_n = 50,
                  sigma = Config.sigma,
                  alpha_low = Config.alpha_low,
                  alpha_high = Config.alpha_high # If alpha_high get a value greater than 0.5, it would have probability to overflow
@@ -59,9 +63,14 @@ class WavenetDataloader(Dataset):
         self.vocal_folders = []
         for each in Config.vocal_data:
             self.vocal_folders += self.readList(each)
+        prev_data_size = len(self.vocal_folders)
+        for each in self.readList(Config.exclude_list):
+            self.vocal_folders.remove(each)
+        print(prev_data_size-len(self.vocal_folders)," songs were removed from vocal datasets")
         self.sample_length = int(sample_length)
         self.cnt = 0
         self.data_counter = 0
+        self.empty_every_n = empty_every_n
         self.sampleNo = sampleNo
         self.num_worker = num_worker
         self.wh = WaveHandler()
@@ -78,32 +87,37 @@ class WavenetDataloader(Dataset):
         np.random.seed(os.getpid()+self.cnt)
         # Select background(background only) and vocal file randomly
         self.cnt += self.num_worker
-        random_music = np.random.randint(0,len(self.music_folders))
-        random_vocal = np.random.randint(0,len(self.vocal_folders))
-        music_fname = self.music_folders[random_music]
-        vocal_fname = self.vocal_folders[random_vocal]
-        music_length = self.wh.get_framesLength(music_fname)
-        vocal_length = self.wh.get_framesLength(vocal_fname)
+        while(True):
+            random_music = np.random.randint(0,len(self.music_folders))
+            random_vocal = np.random.randint(0,len(self.vocal_folders))
+            music_fname = self.music_folders[random_music]
+            vocal_fname = self.vocal_folders[random_vocal]
+            music_length = self.wh.get_framesLength(music_fname)
+            vocal_length = self.wh.get_framesLength(vocal_fname)
 
-        background_start = np.random.randint(0, music_length - self.sample_length)
-        vocal_start = np.random.randint(0, vocal_length - self.sample_length)
-        background_crop = self.wh.read_wave(music_fname,
-                                            portion_start=background_start,
-                                            portion_end=background_start+self.sample_length)
+            background_start = np.random.randint(0, music_length - self.sample_length)
+            vocal_start = np.random.randint(0, vocal_length - self.sample_length)
+            background_crop = self.wh.read_wave(music_fname,
+                                                portion_start=background_start,
+                                                portion_end=background_start+self.sample_length)
 
-        vocal_crop = self.wh.read_wave(vocal_fname,
-                                       portion_start=vocal_start,
-                                       portion_end=vocal_start+self.sample_length)
+            vocal_crop = self.wh.read_wave(vocal_fname,
+                                           portion_start=vocal_start,
+                                           portion_end=vocal_start+self.sample_length)
 
-        # Randomly crop
-        vocal_crop = vocal_crop.astype(np.float32)
-        try:
+            # Randomly crop
+            vocal_crop = vocal_crop.astype(np.float32)
+            try:
+                max_background = np.max(np.abs(background_crop))
+            except:
+                print(background_crop)
+                exit(0)
+            max_vocal = np.max(np.abs(vocal_crop))
             max_background = np.max(np.abs(background_crop))
-        except:
-            print(background_crop)
-            exit(0)
-        max_vocal = np.max(np.abs(vocal_crop))
-
+            if(max_vocal<100 or max_background<100):
+                continue
+            else:
+                break
         # To avoid magnify the blank vocal
 
         if(not max_vocal == 0 and (max_background/max_vocal)<50):
@@ -117,7 +131,9 @@ class WavenetDataloader(Dataset):
         b,v,s = torch.Tensor(background_crop), torch.Tensor(vocal_crop), torch.Tensor(background_crop + vocal_crop)
         if(not Config.time_domain_loss):
             b,v,s = stft(b.float(),Config.sample_rate),stft(v.float(),Config.sample_rate),stft(s.float(),Config.sample_rate)
-        return b,v,s#  ,(music_fname.split('/')[-2]+music_fname.split('/')[-1],vocal_fname.split('/')[-2]+vocal_fname.split('/')[-1])
+        # if (self.data_counter % self.empty_every_n == 0):
+        #     return b,torch.randn(b.shape),b
+        return b,v,s ,(music_fname,vocal_fname)
 
     def __len__(self):
         # Actually infinit due to the random dynamic sampling
@@ -147,13 +163,14 @@ if __name__ == "__main__":
     #     start = time.time()
 
     pref = data_prefetcher(dl)
-    b,v,s = pref.next()
+    b,v,s,n = pref.next()
     iteration = 0
 
     while s is not None:
         start = time.time()
         iteration += 1
-        b,v,s = pref.next()
+        b,v,s,n = pref.next()
+        print(n)
         # wh.save_wave(s.cpu().numpy().astype(np.int16),"tempOutput/"+str(iteration)+".wav")
         end = time.time()
         print(start-end,iteration)

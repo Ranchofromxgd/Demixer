@@ -4,6 +4,8 @@ import os
 
 import datetime
 class Config:
+    # Run mode
+    MODE_CLEAN_DATA = True
     # Project configurations
     project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
     datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
@@ -43,11 +45,11 @@ class Config:
                         'l1',
                       'l2',
                       'l3',
-                      # 'l4',
-                      #  'l5',
+                      'l4',
+                       'l5',
                       # 'l6',
-                       'l7',
-                       'l8',
+                      #  'l7',
+                      #  'l8',
                       ]
     if ('l4' in loss_component
             or 'l5' in loss_component
@@ -63,18 +65,22 @@ class Config:
     vocal_fname = "vocals.wav"
     epoches = 200
     use_gpu = True
-    learning_rate = 0.0005
-    accumulation_step = 100
+    learning_rate = 0.0003
+    accumulation_step = 6
     step_size = 120000
     gamma = 0.8
     sample_rate = 44100
     batch_size = 1
     num_workers = batch_size
     frame_length = 3
-    device_str = "cuda:1"
+    # empty_every_n = 5
+    device_str = "cuda:0"
     device = torch.device( device_str if use_gpu else "cpu")
 
+    validation_interval = 6000
     # Dataset
+    # exclude data
+    exclude_list = datahub_root+"datahub/exclude_vocal_list.txt"
     ## musdb18hq
     musdb_test_pth = datahub_root+"musdb18hq/test/"
     musdb_train_pth = datahub_root+"musdb18hq/train/"
@@ -86,14 +92,6 @@ class Config:
     ## Config data path
     ### vocal data
     vocal_data = [
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
-        musdb_train_vocal,
         musdb_train_vocal,
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
@@ -118,19 +116,10 @@ class Config:
         datahub_root + "datahub/Remix混音 | 干声素材 | Acapella.txt",
         datahub_root + "datahub/新垣结衣清唱收集.txt",
         datahub_root + "datahub/说唱干声素材(Acapella).txt",
-    ]
+    ]+[musdb_train_vocal]*5
 
     ### background data
     background_data = [
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
-        musdb_train_background,
         musdb_train_background,
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
@@ -169,10 +158,11 @@ class Config:
         datahub_root + "datahub/旋律型吉他独奏（solo）.txt",
         datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
         datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
-    ]+[datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt"]*15\
+    ]+[datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt"]*20\
     +[datahub_root + "datahub/单簧管独奏曲收藏.txt"]*10\
     +[datahub_root + "datahub/德国著名黑管演奏家雨果.斯特拉瑟.txt"]*5\
-    +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20
+    +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20\
+    +[musdb_train_background]*10
 
     # Config for energy variance
     mu = 0.5
@@ -204,8 +194,10 @@ class Config:
                 +"bs"+str(batch_size)+"_"\
                 +"fl"+str(frame_length)+"_"\
                 +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
-                +"lnu"+str(layer_numbers_unet)\
-                +"mu"+str(mu)+"sig"+str(sigma)+"low"+str(alpha_low)+"hig"+str(alpha_high)
+                +"lnu"+str(layer_numbers_unet) \
+                + "mu" + str(mu) + "sig" + str(sigma) + "low" + str(alpha_low) + "hig" + str(alpha_high)
+                # +"emptyN"+str(empty_every_n)\
+
 
 if __name__ == "__main__":
     print(Config.trail_name)

@@ -38,7 +38,6 @@ def si_sdr(estimated, original):
     sdr = 10 * torch.log10(pow_p_norm(target) / (pow_p_norm(noise) + EPS) + EPS)
     return torch.sum(sdr)/sdr.size()[0]
 
-
 # Minimize negative SI-SDR
 def permute_si_sdr(est, src, device):
     """ Caculate SI-SDR with PIT.
@@ -87,7 +86,6 @@ def squeeze(signal):
 
 if __name__ == "__main__":
     import torch
-    a = torch.Tensor(torch.ones(2,3000))
-    b = torch.Tensor(torch.rand(2,3000))
+    a = torch.Tensor(torch.randn(2,3000))
+    b = torch.Tensor(torch.randn(2,3000))
     print(si_sdr(a,b))
-    print(si_sdr(a,a))

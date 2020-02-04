@@ -86,7 +86,7 @@ def permute_si_sdr_single(e1, c1):
     return sdr1
 
 if __name__ == "__main__":
-    input1 = np.linspace(0,1000,1000)
-    input2 = np.linspace(1000,0,1000)
+    input1 = np.zeros(shape=(2,3000))
+    input2 = np.zeros(shape=(2,3000))
     # input2 = np.random.randn((2000))*2000
     print(si_sdr(input2,input1))

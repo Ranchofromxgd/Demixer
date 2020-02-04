@@ -126,12 +126,14 @@ class SpleeterUtil:
             mask_bak[:, i, :] *= mask[i]
         return mask_bak.unsqueeze(0),mask
 
-    def evaluate(self, save_wav=True, save_json=True):
+    def evaluate(self, save_wav=True, save_json=True,firstN = None):
         performance = {}
         dir_pth = self.test_pth
-        pth = os.listdir(dir_pth) # + os.listdir(self.test_pth)
+        pth = os.listdir(dir_pth)
         pth.sort()
-        for each in pth: # TODO
+        for cnt,each in enumerate(pth): # TODO
+            if(firstN is not None and cnt == firstN):
+                break
             print("evaluating: ", each, end="  ")
             performance[each] = {}
             background_fpath = dir_pth + each + "/" + Config.background_fname
@@ -247,8 +249,8 @@ class SpleeterUtil:
                         mask = self.model.forward(ch, input_f)
 
                         # If vocal, add posterior handling
-                        if(ch == 1):
-                            mask,switch = self.posterior_handling(mask)
+                        # if(ch == 1):
+                        #     mask,switch = self.posterior_handling(mask)
                         #     # Visualize switch
                         #     switch = switch.cpu().detach().numpy()
                         #     if (switch_all is None):
@@ -335,8 +337,8 @@ if __name__ == "__main__":
     from evaluate.sdr import sdr_evaluate
     path = Config.load_model_path +"/model" + str(Config.start_point) + ".pkl"
     su = SpleeterUtil(model_pth=path)
-    # su.evaluate(save_wav=True)
-    su.Split_listener()
+    su.evaluate(save_wav=True)
+    # su.Split_listener()
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])
     # vocal_min_length = min(vocal.shape[0], origin_vocal.shape[0])

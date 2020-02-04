@@ -5,7 +5,9 @@ from torch.utils.data import DataLoader
 from util.dsp_torch import stft,istft
 from util.wave_util import WaveHandler
 from evaluate.si_sdr_torch import si_sdr
+from dataloader.construct_dataset import write_list
 import torch
+import numpy as np
 import os
 import time
 import pynvml
@@ -47,7 +49,12 @@ loss = torch.nn.L1Loss()
 wav_loss_cache = []
 freq_loss_cache = []
 wav_cons_loss_cache = []
+sisdr_vocal_loss_cache = []
+sisdr_back_loss_cache = []
 freq_cons_loss_cache = []
+validation_result_cache = []
+# data cache
+if(Config.MODE_CLEAN_DATA):bad_datas = []
 
 sdr_background_cache, sdr_vocal_cache = [],[]
 
@@ -69,6 +76,26 @@ dl = torch.utils.data.DataLoader(
 optimizer = torch.optim.Adam(model.parameters(), lr=Config.learning_rate)
 optimizer.zero_grad()
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=Config.step_size, gamma=Config.gamma)
+
+best_sisdr_vocal,best_sisdr_background = -10,-10
+
+def validate():
+    global best_sisdr_vocal,best_sisdr_background
+    print("Validation process start...")
+    su = SpleeterUtil(model_pth=model)
+    need_save = False
+    sdr_background, sdr_vocal = su.evaluate(save_wav=False, save_json=False,firstN=15)
+    if(best_sisdr_background == -10 or sdr_background>best_sisdr_background ):
+        print("New background record! ", sdr_background)
+        best_sisdr_background = sdr_background
+        need_save = True
+    if(best_sisdr_vocal  == -10 or sdr_vocal>best_sisdr_vocal):
+        print("New vocal record! ",sdr_vocal)
+        best_sisdr_vocal = sdr_vocal
+        need_save = True
+    if(need_save == True and model.cnt != Config.start_point and model.cnt > 4*Config.validation_interval):
+        save_and_evaluation()
+    validation_result_cache.append(need_save)
 
 def save_and_evaluation():
     print("Save model")
@@ -131,12 +158,20 @@ def train( # Frequency domain
                 temp3 = loss(output_vocal,target_vocal)/Config.accumulation_step
                 lossVal += temp3
                 freq_loss_cache.append(freq_loss+float(temp3)*Config.accumulation_step)
-            # if('l4' in Config.loss_component):
-            #     val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
-            #     lossVal = val
-            # if('l5' in Config.loss_component):
-            #     val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
-            #     lossVal += val
+            if('l4' in Config.loss_component):
+                val = -si_sdr(output_t_background.float()[:,:min_length_background],target_t_background.float()[:,:min_length_background])
+                lossVal += val
+                sisdr_back_loss_cache.append(float(val))
+
+            if('l5' in Config.loss_component):
+                val = -si_sdr(output_t_vocal.float()[:,:min_length_vocal],target_t_vocal.float()[:,:min_length_vocal])
+                lossVal += val
+                # I deem sisdr > 10 as dirty data
+                if(float(val)>10):
+                    if("musdb" not in name[1][0] and "song_data" not in name[1][0] and "k_pop" not in name[1][0]):
+                        bad_datas.append(name[1][0]+" "+str(float(val)))
+                        return False
+                sisdr_vocal_loss_cache.append(float(val))
             # if('l6' in Config.loss_component):
             #     temp6 = L1loss(output_t_background.float()[:,:min_length_vocal_background]+output_t_vocal.float()[:,:min_length_vocal_background],target_t_song.float()[:,:min_length_vocal_background])
             #     lossVal += temp6
@@ -155,6 +190,7 @@ def train( # Frequency domain
                 # Optimize
                 optimizer.step()
                 optimizer.zero_grad()
+            return True
 
 every_n = 100
 
@@ -163,38 +199,50 @@ for epoch in range(Config.epoches):
     print("EPOCH: ", epoch)
     start = time.time()
     pref = dataloader.data_prefetcher(dl)
-    background, vocal, song = pref.next()
+    background, vocal, song,name = pref.next()
     while(background is not None):
         if (model.cnt % every_n == 0 and model.cnt != Config.start_point):#and model.cnt != Config.start_point
             t1 = time.time()
+            if(Config.MODE_CLEAN_DATA):write_list(bad_datas,"bad_datas.txt")
             meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
             print(str(model.cnt)+
-                  " - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
+                  # " - Raw wav L1loss", (sum(wav_loss_cache[-every_n:]) / every_n),
                   # "\tRaw wav conserv-loss", (sum(wav_cons_loss_cache[-every_n:]) / every_n),
-                  "\tFreq L1loss", (sum(freq_loss_cache[-every_n:]) / every_n),
-                  "\tFreq conserv-loss", (sum(freq_cons_loss_cache[-every_n:]) / every_n),
-                  "\tlr:",optimizer.param_groups[0]['lr'],
-                  "\tspeed:",(every_n*Config.frame_length*Config.batch_size)/(t1-t0),
-                  "\tGPU:",meminfo.used/(1024*1024),"MB")
+                  " Freq L1loss", format((sum(freq_loss_cache[-every_n:]) / every_n), '.2f'),
+                  " Sisdr-vocal", format((sum(sisdr_vocal_loss_cache[-every_n:]) / every_n), '.2f'),
+                  " Sisdr-background", format((sum(sisdr_back_loss_cache[-every_n:]) / every_n), '.2f'),
+                  " Freq conserv-loss", format((sum(freq_cons_loss_cache[-every_n:]) / every_n), '.2f'),
+                  " lr:",optimizer.param_groups[0]['lr'],
+                  " speed:",format((every_n*Config.frame_length*Config.batch_size)/(t1-t0), '.2f'),
+                  " GPU:",meminfo.used/(1024*1024),"MB")
             wav_loss_cache = []
             freq_loss_cache = []
             wav_cons_loss_cache = []
             freq_cons_loss_cache = []
-            if (model.cnt % 12000 == 0):
-                save_and_evaluation()
-            t0 = time.time()
+            sisdr_loss_cache = []
+        if (model.cnt % Config.validation_interval == 0):
+            validate()
+            max_tolerate_validation = 8
+            if(len(validation_result_cache)>max_tolerate_validation and sum(validation_result_cache[-max_tolerate_validation:]) == 0):
+                print("Continuelly appeared bad result on validation set! Not improved in ",max_tolerate_validation," tries")
+                raise RuntimeError("Train process terminate with exit code 0")
+        t0 = time.time()
         if(Config.time_domain_loss):f_background, f_vocal, f_song = stft(background.float(),sample_rate=Config.sample_rate,use_gpu=True),\
                                                                     stft(vocal.float(),sample_rate=Config.sample_rate,use_gpu=True),\
                                                                     stft(song.float(),sample_rate=Config.sample_rate,use_gpu=True)
         else:f_background, f_vocal, f_song = background, vocal, song
-        train(target_background=f_background,
+        status = train(target_background=f_background,
               target_vocal=f_vocal, 
               target_song=f_song,
               target_t_background=background,
               target_t_vocal=vocal,
               target_t_song=song)
+        # If the training data is not clean
+        if(not status):
+            background, vocal, song,name = pref.next()
+            continue
+        background, vocal, song, name = pref.next()
         scheduler.step()
-        background, vocal, song = pref.next()
         model.cnt += 1
     end = time.time()
     print("Epoch "+str(epoch)+" finish, total time: "+str(end-start))

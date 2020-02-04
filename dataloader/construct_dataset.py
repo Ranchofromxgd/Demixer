@@ -368,6 +368,64 @@ def filter_data(pth):
         plt.savefig(pth+"pics/"+each.split(".")[-2]+".png")
         break
 
+def bad_data_statistic():
+    def split_last_space(raw):
+        place = []
+        for i in range(0,len(raw)):
+            if(raw[i] == " "):
+                place.append(i)
+        i = place[-1]
+        return raw[:i],raw[i+1:]
+
+
+    data = readList(Config.project_root+"bad_datas.txt")
+    dict = {}
+    musdb = {}
+    kpop = {}
+    song = {}
+    for i in range(len(data)):
+        key = split_last_space(data[i])[0]
+        value = float(data[i].strip("\n").split(" ")[-1])
+        if(not key in dict.keys()):
+            dict[key] = value
+        else:
+            dict[key] += value
+        if('musdb' in key):
+            musdb[key] = value
+        elif("k_pop" in key):
+            kpop[key] = value
+        elif("song_data" in key):
+            song[key] = value
+    print(len(dict.keys()))
+
+    # import matplotlib.pyplot as plt
+    # plt.figure(figsize=(12,12))
+    # plt.subplot(221)
+    # plt.hist(list(dict.values()),bins=400)
+    # plt.xlim([-50,450])
+    # plt.ylim([0,90])
+    # plt.title("All data")
+    # plt.xlabel("Certainty of bad data")
+    # plt.ylabel("Frequency(times)")
+    # plt.subplot(222)
+    # plt.hist(list(musdb.values()),bins=20)
+    # plt.title("musdb")
+    # plt.xlabel("Certainty of bad data")
+    # plt.ylabel("Frequency(times)")
+    # plt.subplot(223)
+    # plt.hist(list(song.values()),bins=20)
+    # plt.title("song")
+    # plt.xlabel("Certainty of bad data")
+    # plt.ylabel("Frequency(times)")
+    # plt.subplot(224)
+    # plt.hist(list(kpop.values()),bins=20)
+    # plt.title("kpop")
+    # plt.xlabel("Certainty of bad data")
+    # plt.ylabel("Frequency(times)")
+    #
+    # plt.show()
+    # write_list(list(dict.keys()),"exclude_list.txt")
+
 def nus_smc_corpus():
     song = Config.datahub_root+"nus-smc-corpus_48/"
     song_dir = []
@@ -437,17 +495,19 @@ def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
     plt.plot(mask.numpy())
     plt.savefig("mask.png")
 
-mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
-mask = posterior_handling(torch.Tensor(mask[1]))
+# mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
+# mask = posterior_handling(torch.Tensor(mask[1]))
 
 # plt.figure(figsize=(20,3))
 # plt.imshow(torch.sum(mask,2))
 # plt.savefig("temp.png")
 
-t_vocal,t_back = 0,0
-for each in Config.vocal_data:
-    t_vocal += get_total_time_in_txt(each)
-for each in Config.background_data:
-    t_back += get_total_time_in_txt(each)
+# t_vocal,t_back = 0,0
+# for each in Config.vocal_data:
+#     t_vocal += get_total_time_in_txt(each)
+# for each in Config.background_data:
+#     t_back += get_total_time_in_txt(each)
+#
+# print(t_vocal,t_back)
 
-print(t_vocal,t_back)
+bad_data_statistic()
