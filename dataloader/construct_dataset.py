@@ -6,6 +6,7 @@ import numpy as np
 from util.wave_util import WaveHandler
 from pydub import AudioSegment
 from config.wavenetConfig import Config
+from models import spleeter
 import torch
 from util.wave_util import save_pickle,load_pickle
 
@@ -344,11 +345,11 @@ def eval_spleeter():
         output_vocal, mus_vocal = unify(output_vocal,mus_vocal)
         output_background,mus_background = unify(output_background,mus_background)
 
-        v = si_sdr(output_vocal,mus_vocal)
-        b = si_sdr(output_background,mus_background)
+        v = sdr(output_vocal,mus_vocal)
+        b = sdr(output_background,mus_background)
         vocal.append(v)
         background.append(b)
-        print("FileName: ",each, "\tSISDR-BACKGROUND: " ,b,"\tSISDR-VOCAL: ",v)
+        print("FileName: ",each, "\tSDR-BACKGROUND: " ,b,"\tSDR-VOCAL: ",v)
         # except:
         #     print("Error",each)
     print("AVG-SDR-VOCAL",sum(vocal)/len(vocal))
@@ -436,14 +437,6 @@ def nus_smc_corpus():
                 song_dir.append(song + each+"/sing/"+file)
     write_list(song_dir,Config.datahub_root+"datahub/nus_smc_corpus_48.txt")
 
-
-
-# netease_filter(Config.datahub_root+"pure_music_mp3/"
-#                ,Config.datahub_root+"pure_music_wav/")
-#
-# netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
-# report_data()
-# eval_spleeter()
 def activation(x):
     # return 1. / (1 + torch.exp(-100 * (x - 0.1)))
     x[x > 0.1] = 1
@@ -495,6 +488,28 @@ def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
     plt.plot(mask.numpy())
     plt.savefig("mask.png")
 
+def merge_model(vocal_model_pth = None,background_model_pth = None):
+    model = spleeter.Spleeter(channels=2, unet_inchannels=2, unet_outchannels=2,use_cpu=True)
+    vocal_model = torch.load(vocal_model_pth,map_location="cpu")
+    background_model = torch.load(background_model_pth,map_location="cpu")
+    model.unet1 = vocal_model.unet1
+    model.unet0 = background_model.unet0
+    model.cnt = 99
+    torch.save(model,"model99.pkl")
+    print("Done!")
+
+# merge_model(Config.project_root+"saved_models/1_2020_1_18_Demixer_DNN_2_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0003_bs1_fl3_ss60000_8lnu5mu0.5sig0.2low0.3hig0.5"+"/model168000.pkl",
+#             Config.project_root+"saved_models/1_2020_1_31_Demixer_DNN_2_4_4_12_0.2_spleeter_sf468000_l1_l2_l3_l7_l8_lr0005_bs1_fl3_ss120000_8lnu5mu0.5sig0.2low0.3hig0.5"+"/model636000.pkl")
+
+
+# netease_filter(Config.datahub_root+"pure_music_mp3/"
+#                ,Config.datahub_root+"pure_music_wav/")
+#
+# netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
+# report_data()
+# eval_spleeter()
+
+
 # mask = load_pickle("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/util/mask.pkl")
 # mask = posterior_handling(torch.Tensor(mask[1]))
 
@@ -509,5 +524,3 @@ def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
 #     t_back += get_total_time_in_txt(each)
 #
 # print(t_vocal,t_back)
-
-bad_data_statistic()

@@ -11,8 +11,7 @@ class Spleeter(nn.Module):
                  channels = 2,
                  unet_inchannels = 1,
                  unet_outchannels = 1,
-                 # load_model_from = "",
-                 # use_cpu = False
+                 use_cpu = False
                  ):
         super(Spleeter, self).__init__()
         self.channels = Config.channels
@@ -22,7 +21,7 @@ class Spleeter(nn.Module):
             if(Config.model_name == "Unet"):model = UNet(n_channels = unet_inchannels,n_classes = unet_outchannels)
             elif(Config.model_name == "Demixer"):model = Demixer(n_channels = unet_inchannels,n_classes = unet_outchannels)
             else:raise ValueError("Error: Non-exist model name")
-            if(Config.device == 'cpu'):exec("self.unet{}=model".format(channel))
+            if(use_cpu):exec("self.unet{}=model".format(channel))
             else:exec("self.unet{}=model.cuda(Config.device)".format(channel))
             # else:exec("self.unet{}=model".format(channel))
 

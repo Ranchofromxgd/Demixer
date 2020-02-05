@@ -64,8 +64,9 @@ class WavenetDataloader(Dataset):
         for each in Config.vocal_data:
             self.vocal_folders += self.readList(each)
         prev_data_size = len(self.vocal_folders)
-        for each in self.readList(Config.exclude_list):
-            self.vocal_folders.remove(each)
+        if(Config.exclude_list != ""):
+            for each in self.readList(Config.exclude_list):
+                self.vocal_folders.remove(each)
         print(prev_data_size-len(self.vocal_folders)," songs were removed from vocal datasets")
         self.sample_length = int(sample_length)
         self.cnt = 0
@@ -87,37 +88,31 @@ class WavenetDataloader(Dataset):
         np.random.seed(os.getpid()+self.cnt)
         # Select background(background only) and vocal file randomly
         self.cnt += self.num_worker
-        while(True):
-            random_music = np.random.randint(0,len(self.music_folders))
-            random_vocal = np.random.randint(0,len(self.vocal_folders))
-            music_fname = self.music_folders[random_music]
-            vocal_fname = self.vocal_folders[random_vocal]
-            music_length = self.wh.get_framesLength(music_fname)
-            vocal_length = self.wh.get_framesLength(vocal_fname)
+        random_music = np.random.randint(0,len(self.music_folders))
+        random_vocal = np.random.randint(0,len(self.vocal_folders))
+        music_fname = self.music_folders[random_music]
+        vocal_fname = self.vocal_folders[random_vocal]
+        music_length = self.wh.get_framesLength(music_fname)
+        vocal_length = self.wh.get_framesLength(vocal_fname)
 
-            background_start = np.random.randint(0, music_length - self.sample_length)
-            vocal_start = np.random.randint(0, vocal_length - self.sample_length)
-            background_crop = self.wh.read_wave(music_fname,
-                                                portion_start=background_start,
-                                                portion_end=background_start+self.sample_length)
+        background_start = np.random.randint(0, music_length - self.sample_length)
+        vocal_start = np.random.randint(0, vocal_length - self.sample_length)
+        background_crop = self.wh.read_wave(music_fname,
+                                            portion_start=background_start,
+                                            portion_end=background_start+self.sample_length)
 
-            vocal_crop = self.wh.read_wave(vocal_fname,
-                                           portion_start=vocal_start,
-                                           portion_end=vocal_start+self.sample_length)
+        vocal_crop = self.wh.read_wave(vocal_fname,
+                                       portion_start=vocal_start,
+                                       portion_end=vocal_start+self.sample_length)
 
-            # Randomly crop
-            vocal_crop = vocal_crop.astype(np.float32)
-            try:
-                max_background = np.max(np.abs(background_crop))
-            except:
-                print(background_crop)
-                exit(0)
-            max_vocal = np.max(np.abs(vocal_crop))
+        # Randomly crop
+        vocal_crop = vocal_crop.astype(np.float32)
+        try:
             max_background = np.max(np.abs(background_crop))
-            if(max_vocal<100 or max_background<100):
-                continue
-            else:
-                break
+        except:
+            print(background_crop)
+            exit(0)
+        max_vocal = np.max(np.abs(vocal_crop))
         # To avoid magnify the blank vocal
 
         if(not max_vocal == 0 and (max_background/max_vocal)<50):

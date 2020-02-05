@@ -11,7 +11,7 @@ from config.wavenetConfig import Config
 from util import wave_util
 from util.dsp_torch import stft, istft
 from util.wave_util import  write_json
-from evaluate.si_sdr_numpy import si_sdr
+from evaluate.si_sdr_numpy import si_sdr,sdr
 from util.vad import VoiceActivityDetector
 from scipy import signal
 
@@ -146,8 +146,8 @@ class SpleeterUtil:
                                                                              )
             background_min_length = min(background.shape[0], origin_background.shape[0])
             vocal_min_length = min(vocal.shape[0], origin_vocals.shape[0])
-            sdr_background = si_sdr(background,origin_background)
-            sdr_vocal = si_sdr(vocal,origin_vocals)
+            sdr_background = sdr(background,origin_background)
+            sdr_vocal = sdr(vocal,origin_vocals)
             if (save_wav == True):
                 if (not os.path.exists(
                         Config.project_root + "outputs/musdb_test/" + self.model_name + str(self.start_point) + "/")):
@@ -178,6 +178,8 @@ class SpleeterUtil:
         performance["ALL"]["sdr_vocal"] = sum(performance["ALL"]["sdr_vocal"]) / (
                     len(performance["ALL"]["sdr_vocal"]) - 1)
         if (save_json == True):
+            if(not os.path.exists(Config.project_root + "outputs/musdb_test/" + self.model_name + str(self.start_point))):
+                os.mkdir(Config.project_root + "outputs/musdb_test/" + self.model_name + str(self.start_point))
             write_json(performance, Config.project_root + "outputs/musdb_test/" + self.model_name + str(
                 self.start_point) + "/result_" + self.model_name + str(self.start_point) + ".json")
         print("Result:")
@@ -332,12 +334,11 @@ class SpleeterUtil:
                        fname=file,
                        scale=0.5)
 
-
 if __name__ == "__main__":
     from evaluate.sdr import sdr_evaluate
     path = Config.load_model_path +"/model" + str(Config.start_point) + ".pkl"
     su = SpleeterUtil(model_pth=path)
-    su.evaluate(save_wav=True)
+    su.evaluate(save_wav=False)
     # su.Split_listener()
     # background,vocal,origin_background,origin_vocal = su.split(background_fpath=background,vocal_fpath=vocal,use_gpu=True,save=True)
     # background_min_length = min(background.shape[0], origin_background.shape[0])

@@ -28,6 +28,20 @@ def pow_p_norm(signal):
 def pow_norm(s1, s2):
     return torch.sum(s1 * s2, dim=-1, keepdim=True)
 
+def unify(source,target):
+    source_max = torch.max(torch.abs(source))
+    target_max = torch.max(torch.abs(target))
+    source = source.astype(torch.float32)/source_max
+    return (source*target_max).astype(torch.int16),target
+
+def sdr(estimated, original):
+    estimated, original = unify(estimated, original)
+    # target = pow_norm(estimated, original) * original / pow_np_norm(original)
+    estimated, original = estimated.astype(torch.float64), original.astype(torch.float64)
+    # original = remove_dc(original)
+    # estimated = remove_dc(estimated)
+    noise = estimated - original
+    return 10 * torch.log10(pow_p_norm(original) / pow_p_norm(noise))
 
 def si_sdr(estimated, original):
     #estimated = remove_dc(estimated)
