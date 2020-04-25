@@ -7,8 +7,8 @@ class Config:
     # Run mode
     MODE_CLEAN_DATA = True
     # Project configurations
-    project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
-    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
+    project_root = "/home/work_nfs/hhliu/workspace/github/internship_music_separation/"
+    datahub_root = "/home/work_nfs/hhliu/workspace/datasets/"
     # Model configurations
     model_name =  "Demixer" # "Unet" #"Demixer"
     if(model_name == "Demixer"):
@@ -17,7 +17,7 @@ class Config:
         dense_bn = 4
         dense_layers = 4
         dense_growth_rate = 12
-        drop_rate = 0.2
+        drop_rate = 0.3
         model_name_alias = model_name+"_"+block+"_"+str(dense_block)+\
                       "_"+str(dense_bn)+\
                       "_"+str(dense_layers)+\
@@ -26,7 +26,7 @@ class Config:
     else:
         model_name_alias = "_unet_spleeter_"
     # Reload pre-trained model
-    load_model_path = project_root+"saved_models/combined_model"
+    load_model_path = project_root+"saved_models/1_2020_2_23_Demixer_DNN_2_4_4_12_0.3_spleeter_sf0_l1_l2_l3_l8_lr003_bs32_fl3_ss320000_85lnu5mu0.5sig0.2low0.3hig0.5fs8fl32"
     start_point  = 0
     # model
     layer_numbers_unet = 5
@@ -48,7 +48,7 @@ class Config:
                       # 'l4',
                       #  'l5',
                       # 'l6',
-                       'l7',
+                      #  'l7',
                        'l8',
                       ]
     if ('l4' in loss_component
@@ -63,21 +63,22 @@ class Config:
     OUTPUT_MASK = True
     background_fname = "background.wav"
     vocal_fname = "vocals.wav"
-    epoches = 200
+    epoches = 2000
     use_gpu = True
-    learning_rate = 0.00001
-    accumulation_step = 16
-    step_size = 120000
-    gamma = 0.9
+    learning_rate = 0.0008
+    accumulation_step = 32
+    step_size = 320000
+    empty_every_n = 3
+    gamma = 0.85
     sample_rate = 44100
     batch_size = 1
     num_workers = batch_size
     frame_length = 3
     # empty_every_n = 5
-    device_str = "cuda:0"
+    device_str = "cuda"
     device = torch.device( device_str if use_gpu else "cpu")
-    best_sdr_vocal, best_sdr_background = 7.58, 10.35
-    validation_interval = 8000
+    best_sdr_vocal, best_sdr_background = None, None
+    validation_interval = 40000
     # Dataset
     # exclude data
     exclude_list = datahub_root+"datahub/exclude_vocal_list.txt"
@@ -89,9 +90,14 @@ class Config:
     musdb_test_vocal = datahub_root +"datahub/musdb_test_vocal.txt"
     musdb_test_background = datahub_root +"datahub/musdb_test_backtrack.txt"
 
+    musdb_train_bass = datahub_root+"datahub/musdb_train_bass.txt"
+    musdb_train_other = datahub_root+"datahub/musdb_train_other.txt"
+    musdb_train_drum = datahub_root+"datahub/musdb_train_drum.txt"
+
     ## Config data path
     ### vocal data
     vocal_data = [
+        musdb_train_vocal,
         musdb_train_vocal,
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
@@ -99,8 +105,6 @@ class Config:
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/k_pop.txt", # 44
         datahub_root + "datahub/k_pop.txt", # 44
         datahub_root + "datahub/k_pop.txt", # 44
         datahub_root + "datahub/k_pop.txt", # 44
@@ -113,12 +117,14 @@ class Config:
         datahub_root + "datahub/Remix干声素材.txt",
         datahub_root + "datahub/Remix混音 | 干声素材 | Acapella.txt",
         datahub_root + "datahub/新垣结衣清唱收集.txt",
-        datahub_root + "datahub/说唱干声素材(Acapella).txt",
     ]+[musdb_train_vocal]*5
 
     ### background data
     background_data = [
         musdb_train_background,
+        musdb_train_bass,
+        musdb_train_drum,
+        musdb_train_other,
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
         datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
@@ -142,7 +148,6 @@ class Config:
         datahub_root + "datahub/各种乐器独奏协奏.txt",
         datahub_root + "datahub/黑白琴键的独奏.txt",
         datahub_root + "datahub/吉他独奏（流行·影视金曲集选）.txt",
-        datahub_root + "datahub/交响乐 电影背景音乐.txt",
         datahub_root + "datahub/【爵士-黑管-单簧管】.txt",
         datahub_root + "datahub/猫和老鼠背景音乐交响乐.txt",
         datahub_root + "datahub/纳卡里亚科夫 小号独奏.txt",
@@ -160,7 +165,9 @@ class Config:
     +[datahub_root + "datahub/单簧管独奏曲收藏.txt"]*10\
     +[datahub_root + "datahub/德国著名黑管演奏家雨果.斯特拉瑟.txt"]*5\
     +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20\
-    +[musdb_train_background]*10
+    +[musdb_train_bass]*20\
+    +[musdb_train_drum]*10\
+    +[musdb_train_other]*10\
 
     # Config for energy variance
     mu = 0.5
@@ -189,11 +196,13 @@ class Config:
         trail_name += each+"_"
     trail_name.strip("_")
     trail_name+="lr"+str(learning_rate).split(".")[-1]+"_"\
-                +"bs"+str(batch_size)+"_"\
+                +"bs"+str(batch_size*accumulation_step)+"_"\
                 +"fl"+str(frame_length)+"_"\
                 +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
                 +"lnu"+str(layer_numbers_unet) \
-                + "mu" + str(mu) + "sig" + str(sigma) + "low" + str(alpha_low) + "hig" + str(alpha_high)
+                + "mu" + str(mu) + "sig" + str(sigma) + "low" + str(alpha_low) + "hig" + str(alpha_high)\
+                +"fs"+str(stft_frame_shift)+"fl"+str(stft_frame_length)\
+                +"empty_n"+str(empty_every_n)
                 # +"emptyN"+str(empty_every_n)\
 
 

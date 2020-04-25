@@ -16,7 +16,7 @@ import torch
 import numpy as np
 import soundfile as sf
 from scipy.io import wavfile
-from config.wavenetConfig import Config
+from config.mainConfig import Config
 sys.path.append(os.path.dirname(sys.path[0]))
 
 import logging
@@ -185,8 +185,8 @@ def get_phase(signal,
 
 def istft(spectrum,
                     sample_rate,
-                    frame_length=32,
-                    frame_shift=8,
+                    frame_length=Config.stft_frame_length,
+                    frame_shift=Config.stft_frame_shift,
                     window_type="hanning",
                     preemphasis=0.0,
                     use_gpu = False,
@@ -226,7 +226,7 @@ def spectrom2magnitude(spectrom,batchsize):
 
 def test1():
     import util.wave_util as wu
-    from config.wavenetConfig import Config
+    from config.mainConfig import Config
     from dataloader import dataloader
     h = wu.WaveHandler()
     dl = torch.utils.data.DataLoader(dataloader.WavenetDataloader(), batch_size=Config.batch_size, shuffle=False,

@@ -1,7 +1,7 @@
 """ Full assembly of the parts to form the complete network """
 import sys
 sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
-from config.wavenetConfig import Config
+from config.mainConfig import Config
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
@@ -117,7 +117,7 @@ class Demixer(nn.Module):
 class RNNblock(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.rnn = nn.GRU(input_size=in_channels,hidden_size=in_channels)
+        self.rnn = nn.GRU(input_size=in_channels,hidden_size=in_channels,batch_first=True)
         # self.rnn2 = nn.GRU(input_size=2*in_channels,hidden_size=in_channels)
     # Input: (N,ch, x, y)
     def forward(self, x):

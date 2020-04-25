@@ -11,7 +11,7 @@ class CausalConv1d(nn.Conv1d):
                                            padding, dilation, groups, bias)
 
     def forward(self, inputs):
-        outputs = super(CausalConv1d, self).forward(inputs)
+        outputs = super(CausalConv1d, self)(inputs)
         return outputs[:, :, :-1]
 
 
@@ -22,7 +22,7 @@ class DilatedConv1d(nn.Conv1d):
                                             padding, dilation, groups, bias)
 
     def forward(self, inputs):
-        outputs = super(DilatedConv1d, self).forward(inputs)
+        outputs = super(DilatedConv1d, self)(inputs)
         return outputs
 
 
@@ -90,5 +90,5 @@ if __name__ == "__main__":
     model = WaveNet()
     print(model)
     input = Variable(torch.LongTensor(np.random.randint(1,255,[10,5000])))
-    out = model.forward(input)
+    out = model(input)
     print(out.size())

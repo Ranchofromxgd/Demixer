@@ -1,11 +1,11 @@
 import sys
-sys.path.append("/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/")
+sys.path.append("..")
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from util.wave_util import WaveHandler
 from pydub import AudioSegment
-from config.wavenetConfig import Config
+from config.mainConfig import Config
 from models import spleeter
 import torch
 from util.wave_util import save_pickle,load_pickle
@@ -158,7 +158,7 @@ def get_total_time_in_txt(txtpath):
     cnt = 0
     files = readList(txtpath)
     total_time = 0
-    for cnt,file in enumerate(files):
+    for file in files:
         try:
             total_time += wh.get_duration(file)
             cnt += 1
@@ -167,8 +167,8 @@ def get_total_time_in_txt(txtpath):
 
     # print(total_time,"s")
     # print(total_time/60,"min")
-    print(txtpath.split('/')[-1].split('.')[-2],",",total_time/3600)
-    return total_time/3600
+    print(txtpath.split('/')[-1].split('.')[-2],",",str(total_time/3600)+"h,",cnt,", "+txtpath)
+    return total_time/3600,cnt
 
 
 def netease_filter(root_path:str,save_path:str):
@@ -425,7 +425,7 @@ def bad_data_statistic():
     # plt.ylabel("Frequency(times)")
     #
     # plt.show()
-    # write_list(list(dict.keys()),"exclude_list.txt")
+    write_list(list(dict.keys()),"exclude_list.txt")
 
 def nus_smc_corpus():
     song = Config.datahub_root+"nus-smc-corpus_48/"
@@ -473,6 +473,7 @@ def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
             vend = i
             if(abs(vend-vstart)<100):
                 mask[vstart:vend] = torch.ones(vend-vstart)
+
     for i in range(mask.shape[0]):
         if(not is_restrained(mask[i]) and not_music == False):
             not_music = True
@@ -489,21 +490,44 @@ def posterior_handling(mask, smooth_length=20, freq_bin_portion=0.25):
     plt.savefig("mask.png")
 
 def merge_model(vocal_model_pth = None,background_model_pth = None):
-    model = spleeter.Spleeter(channels=2, unet_inchannels=2, unet_outchannels=2,use_cpu=True)
+    model = spleeter.Spleeter(channels=2, unet_inchannels=8, unet_outchannels=8,use_cpu=True)
     vocal_model = torch.load(vocal_model_pth,map_location="cpu")
     background_model = torch.load(background_model_pth,map_location="cpu")
     model.unet1 = vocal_model.unet1
     model.unet0 = background_model.unet0
-    model.cnt = 99
-    torch.save(model,"model99.pkl")
+    model.cnt = 666666
+    torch.save(model,"model6660000.pkl")
     print("Done!")
 
-# merge_model(Config.project_root+"saved_models/1_2020_1_18_Demixer_DNN_2_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0003_bs1_fl3_ss60000_8lnu5mu0.5sig0.2low0.3hig0.5"+"/model168000.pkl",
-#             Config.project_root+"saved_models/1_2020_1_31_Demixer_DNN_2_4_4_12_0.2_spleeter_sf468000_l1_l2_l3_l7_l8_lr0005_bs1_fl3_ss120000_8lnu5mu0.5sig0.2low0.3hig0.5"+"/model636000.pkl")
+def construct_VCTK(pth = None):
+    if(pth == None or pth[-1] != '/'):
+        raise ValueError("Error:input pth should end with /")
+    dir = []
+    for each in os.listdir(pth):
+        dir.append(pth+each)
+    write_list(dir,"VCTK.txt")
+
+def construct_musdb_splited():
+    musdb_train = Config.datahub_root+"musdb18hq_splited/train/"
+    train_drum = []
+    train_other = []
+    train_bass = []
+    for each in os.listdir(musdb_train):
+        train_drum.append(musdb_train+each+"/drums.wav")
+        train_other.append(musdb_train+each+"/other.wav")
+        train_bass.append(musdb_train+each+"/bass.wav")
+    write_list(train_drum,Config.datahub_root+"datahub/musdb_drum.txt")
+    write_list(train_other,Config.datahub_root+"datahub/musdb_other.txt")
+    write_list(train_bass,Config.datahub_root+"datahub/musdb_bass.txt")
 
 
+# merge_model(Config.project_root+"saved_models/1_2020_4_6_DenseUnet_4_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0005_bs2-15_fl1.5_ss64000_85lnu5mu0.5sig0.2low0.3hig0.5fshift8flength32drop0split_bandTrue"+"/model368000.pkl",
+#             Config.project_root+"saved_models/1_2020_4_6_DenseUnet_4_4_4_12_0.2_spleeter_sf0_l1_l2_l3_lr0005_bs2-15_fl1.5_ss64000_85lnu5mu0.5sig0.2low0.3hig0.5fshift8flength32drop0split_bandTrue"+"/model320000.pkl")
+
+#
 # netease_filter(Config.datahub_root+"pure_music_mp3/"
 #                ,Config.datahub_root+"pure_music_wav/")
+# report_data()
 #
 # netease_filter("/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_mp3/","/home/disk2/internship_anytime/liuhaohe/datasets/pure_vocal_wav/")
 # report_data()
@@ -517,10 +541,4 @@ def merge_model(vocal_model_pth = None,background_model_pth = None):
 # plt.imshow(torch.sum(mask,2))
 # plt.savefig("temp.png")
 
-# t_vocal,t_back = 0,0
-# for each in Config.vocal_data:
-#     t_vocal += get_total_time_in_txt(each)
-# for each in Config.background_data:
-#     t_back += get_total_time_in_txt(each)
-#
-# print(t_vocal,t_back)
+# spleet_pth("/home/work_nfs/hhliu/workspace/github/internship_music_separation/evaluate/raw_wave/")

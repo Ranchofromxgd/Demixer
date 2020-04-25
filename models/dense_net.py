@@ -55,11 +55,11 @@ class _Transition(nn.Sequential):
 
 
 class _DenseBlock(nn.Module):
-    def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, efficient=False):
+    def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, efficient=False,concact_input_features = 0):
         super(_DenseBlock, self).__init__()
         for i in range(num_layers):
             layer = _DenseLayer(
-                num_input_features + i * growth_rate,
+                num_input_features + i * growth_rate+concact_input_features,
                 growth_rate=growth_rate,
                 bn_size=bn_size,
                 drop_rate=drop_rate,
@@ -67,8 +67,18 @@ class _DenseBlock(nn.Module):
             )
             self.add_module('denselayer%d' % (i + 1), layer)
 
-    def forward(self, init_features):
+    # def concact_features(self,x1,x2):
+    #     # input is CHW
+    #     diffY = x2.size()[2] - x1.size()[2]
+    #     diffX = x2.size()[3] - x1.size()[3]
+    #
+    #     x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+    #                     diffY // 2, diffY - diffY // 2])
+    #     return torch.cat([x2, x1], dim=1)
+
+    def forward(self, init_features,concact_features = None):
         features = [init_features]
+        if(concact_features is not None): features.append(concact_features)
         for name, layer in self.named_children():
             new_features = layer(*features)
             features.append(new_features)
@@ -157,7 +167,7 @@ class DenseNet(nn.Module):
 
 
 if __name__ == "__main__":
-    net = _DenseBlock(num_layers = 2, num_input_features= 50, bn_size= 4, growth_rate= -12, drop_rate= 0.2)
-    print(net)
-    # data = torch.randn((2,50,300,400))
-    # print(net(data).size())
+    net = _DenseBlock(num_layers = 2, num_input_features= 50, bn_size= 4, growth_rate= 12, drop_rate= 0.2)
+    # print(net)
+    data = torch.randn((2,50,300,400))
+    print(net(data).size())

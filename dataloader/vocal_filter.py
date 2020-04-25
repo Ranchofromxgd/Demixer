@@ -1,6 +1,6 @@
 import sys,os
 sys.path.append("..")
-from config.wavenetConfig import Config
+from config.mainConfig import Config
 save_root = Config.datahub_root+"pure_vocal_mp3/"
 from util.wave_util import WaveHandler
 import numpy as np

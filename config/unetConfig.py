@@ -1,16 +1,18 @@
 import torch
 import os
 
-
 import datetime
+
 class Config:
     # Run mode
     MODE_CLEAN_DATA = True
     # Project configurations
-    project_root = "/home/disk2/internship_anytime/liuhaohe/he_workspace/github/music_separator/"
-    datahub_root = "/home/disk2/internship_anytime/liuhaohe/datasets/"
+    project_root = "/home/work_nfs/hhliu/workspace/github/internship_music_separation/"
+    datahub_root = "/home/work_nfs/hhliu/workspace/datasets/"
     # Model configurations
-    model_name =  "Demixer" # "Unet" #"Demixer"
+    channels = 2
+    OUTPUT_MASK = True
+    model_name =  "Unet" # "Unet" #"Demixer"
     if(model_name == "Demixer"):
         block = "DNN"
         dense_block = 2
@@ -25,11 +27,44 @@ class Config:
                       "_"+str(drop_rate)+"_"
     else:
         model_name_alias = "_unet_spleeter_"
+    layer_numbers_unet = 6
+    # Split four bands
+    split_band = True
+
     # Reload pre-trained model
-    load_model_path = project_root+"saved_models/combined_model"
+    load_model_path = project_root+"saved_models/1_2020_3_3__unet_spleeter_spleeter_sf0_l1_l2_l3_lr0001_bs2_fl3_ss16000_85lnu5mu0.5sig0.2low0.3hig0.5fshift8flength32"
     start_point  = 0
-    # model
-    layer_numbers_unet = 5
+
+    #Hyper-params
+    epoches = 200
+    learning_rate = 0.001
+    accumulation_step = 16
+    step_size = 32000
+    gamma = 0.85
+    sample_rate = 44100
+    batch_size = 2
+    num_workers = batch_size
+    frame_length = 3
+    # empty_every_n = 5
+    drop_rate = 0.5
+
+    # Training
+    use_gpu = True
+    device_str = "cuda"
+    device = torch.device(device_str if use_gpu else "cpu")
+    best_sdr_vocal, best_sdr_background = None, None
+    validation_interval = 16000
+
+    # Config for energy variance
+    mu = 0.5
+    sigma = 0.2
+    alpha_low = 0.3
+    alpha_high = 0.5
+
+    # Config for stft and istft
+    stft_frame_shift = 8
+    stft_frame_length = 32
+
     # Loss function
     '''
     l1: Frequency domain energy conservation l1 loss
@@ -48,8 +83,8 @@ class Config:
                       # 'l4',
                       #  'l5',
                       # 'l6',
-                       'l7',
-                       'l8',
+                      #  'l7',
+                      #  'l8',
                       ]
     if ('l4' in loss_component
             or 'l5' in loss_component
@@ -59,28 +94,40 @@ class Config:
         time_domain_loss = True
     else:
         time_domain_loss = False
-    channels = 2
-    OUTPUT_MASK = True
-    background_fname = "background.wav"
-    vocal_fname = "vocals.wav"
-    epoches = 200
-    use_gpu = True
-    learning_rate = 0.00001
-    accumulation_step = 16
-    step_size = 120000
-    gamma = 0.9
-    sample_rate = 44100
-    batch_size = 1
-    num_workers = batch_size
-    frame_length = 3
-    # empty_every_n = 5
-    device_str = "cuda:0"
-    device = torch.device( device_str if use_gpu else "cpu")
-    best_sdr_vocal, best_sdr_background = 7.58, 10.35
-    validation_interval = 8000
+
+    # Build trail name
+    cur = datetime.datetime.now()
+    if(OUTPUT_MASK == False):trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'_NM_spleeter_'
+    else: trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'spleeter_'+"sf"+str(start_point)+"_"
+    counter = 1
+    for each in os.listdir(project_root+"saved_models"):
+        t = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)
+        if(t in each):
+            for dirName in os.listdir(project_root+"saved_models/"+each):
+                if("model" in dirName):
+                    counter+= 1
+                    break
+
+    trail_name = str(counter)+"_"+trail_name
+    for each in loss_component:
+        trail_name += each+"_"
+    trail_name.strip("_")
+    trail_name+="lr"+str(learning_rate).split(".")[-1]+"_"\
+                +"bs"+str(batch_size)+"-"+str(accumulation_step)+"_"\
+                +"fl"+str(frame_length)+"_"\
+                +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
+                +"lnu"+str(layer_numbers_unet) \
+                + "mu" + str(mu) + "sig" + str(sigma) + "low" + str(alpha_low) + "hig" + str(alpha_high)\
+                +"fshift"+str(stft_frame_shift)+"flength"+str(stft_frame_length)\
+                +"drop"+str(drop_rate)\
+                +"split_band"+str(split_band)
+                # +"emptyN"+str(empty_every_n)\
+
+
+
     # Dataset
     # exclude data
-    exclude_list = datahub_root+"datahub/exclude_vocal_list.txt"
+    exclude_list = ""# datahub_root+"datahub/exclude_vocal_list.txt"
     ## musdb18hq
     musdb_test_pth = datahub_root+"musdb18hq/test/"
     musdb_train_pth = datahub_root+"musdb18hq/train/"
@@ -89,20 +136,15 @@ class Config:
     musdb_test_vocal = datahub_root +"datahub/musdb_test_vocal.txt"
     musdb_test_background = datahub_root +"datahub/musdb_test_backtrack.txt"
 
+    musdb_train_bass = datahub_root+"datahub/musdb_train_bass.txt"
+    musdb_train_other = datahub_root+"datahub/musdb_train_other.txt"
+    musdb_train_drum = datahub_root+"datahub/musdb_train_drum.txt"
+
     ## Config data path
     ### vocal data
     vocal_data = [
         musdb_train_vocal,
         datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/song_vocal_data_44_1.txt", # 1440
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/k_pop.txt", # 44
-        datahub_root + "datahub/k_pop.txt", # 44
         datahub_root + "datahub/k_pop.txt", # 44
         datahub_root + "datahub/干声（纯人声系）.txt",
         datahub_root + "datahub/干声素材！Acapella！音乐制作人工具包.txt",
@@ -113,23 +155,25 @@ class Config:
         datahub_root + "datahub/Remix干声素材.txt",
         datahub_root + "datahub/Remix混音 | 干声素材 | Acapella.txt",
         datahub_root + "datahub/新垣结衣清唱收集.txt",
-        datahub_root + "datahub/说唱干声素材(Acapella).txt",
-    ]+[musdb_train_vocal]*5
+    ]
 
     ### background data
     background_data = [
         musdb_train_background,
+        musdb_train_bass,
+        musdb_train_drum,
+        musdb_train_other,
+        datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt",
         datahub_root + "datahub/Eminem歌曲纯伴奏单.txt",
         datahub_root + "datahub/超舒服的说唱伴奏（Rap Beat）.txt",
+        datahub_root + "datahub/西非:非洲鼓(打击乐).txt",
         datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
         datahub_root + "datahub/pure_music_7.txt",
         datahub_root + "datahub/Artpop(Intrumental).txt",
         datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/纯伴奏byLHH.txt",
-        datahub_root + "datahub/抖腿 | 刷题必听电音(无人声).txt",
+        datahub_root + "datahub/【器乐】架子鼓.txt",
+        datahub_root + "datahub/Avril Lavigne Instrumental Version.txt",
         datahub_root + "datahub/奥斯卡电影交响乐.txt",
-        datahub_root + "datahub/柴可夫斯基钢琴独奏作品全集.txt",
         datahub_root + "datahub/吹奏乐1000首.txt",
         datahub_root + "datahub/纯音乐|鼓点节奏 •器乐 •电音 |BGM.txt",
         datahub_root + "datahub/纯音乐·西洋乐器.txt",
@@ -156,46 +200,9 @@ class Config:
         datahub_root + "datahub/旋律型吉他独奏（solo）.txt",
         datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
         datahub_root + "datahub/一入电音深似海 | 纯音乐电音.txt",
-    ]+[datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt"]*20\
-    +[datahub_root + "datahub/单簧管独奏曲收藏.txt"]*10\
-    +[datahub_root + "datahub/德国著名黑管演奏家雨果.斯特拉瑟.txt"]*5\
-    +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20\
-    +[musdb_train_background]*10
-
-    # Config for energy variance
-    mu = 0.5
-    sigma = 0.2
-    alpha_low = 0.3
-    alpha_high = 0.5
-
-    # Config for stft and istft
-    stft_frame_shift = 8
-    stft_frame_length = 32
-
-    # Build trail name
-    cur = datetime.datetime.now()
-    if(OUTPUT_MASK == False):trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'_NM_spleeter_'
-    else: trail_name = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)+"_"+ model_name_alias+'spleeter_'+"sf"+str(start_point)+"_"
-    counter = 1
-    for each in os.listdir(project_root+"saved_models"):
-        t = str(cur.year)+"_"+str(cur.month)+"_"+str(cur.day)
-        if(t in each):
-            for dirName in os.listdir(project_root+"saved_models/"+each):
-                if("model" in dirName):
-                    counter+= 1
-                    break
-    trail_name = str(counter)+"_"+trail_name
-    for each in loss_component:
-        trail_name += each+"_"
-    trail_name.strip("_")
-    trail_name+="lr"+str(learning_rate).split(".")[-1]+"_"\
-                +"bs"+str(batch_size)+"_"\
-                +"fl"+str(frame_length)+"_"\
-                +"ss"+str(step_size)+"_"+str(gamma).split(".")[-1]\
-                +"lnu"+str(layer_numbers_unet) \
-                + "mu" + str(mu) + "sig" + str(sigma) + "low" + str(alpha_low) + "hig" + str(alpha_high)
-                # +"emptyN"+str(empty_every_n)\
-
-
-if __name__ == "__main__":
-    print(Config.trail_name)
+    ]
+    # +[datahub_root + "datahub/牛逼到炸裂的电吉他独奏神曲.txt"]*20\
+    # +[datahub_root + "datahub/单簧管独奏曲收藏.txt"]*10\
+    # +[datahub_root + "datahub/德国著名黑管演奏家雨果.斯特拉瑟.txt"]*5\
+    # +[datahub_root + "datahub/西非:非洲鼓(打击乐).txt"]*20\
+    # +[musdb_train_background]*10
